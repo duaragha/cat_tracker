@@ -1,0 +1,7 @@
+/* Base styles for the app */
+body {
+  margin: 0;
+  padding: 0;
+}
+
+/* Let Chakra UI handle all the styling */
