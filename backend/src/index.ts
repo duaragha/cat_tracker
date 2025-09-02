@@ -14,7 +14,14 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-app.use(cors());
+// Configure CORS properly for production
+const corsOptions = {
+  origin: process.env.FRONTEND_URL || '*',
+  credentials: true,
+  optionsSuccessStatus: 200
+};
+
+app.use(cors(corsOptions));
 app.use(express.json({ limit: '10mb' }));
 
 app.use('/api/profile', profileRouter);
@@ -23,6 +30,10 @@ app.use('/api/food', foodRouter);
 app.use('/api/sleep', sleepRouter);
 app.use('/api/weight', weightRouter);
 app.use('/api/photos', photosRouter);
+
+app.get('/health', (req, res) => {
+  res.json({ status: 'healthy', port: PORT, env: process.env.NODE_ENV });
+});
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'healthy' });
