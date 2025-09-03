@@ -27,6 +27,7 @@ interface CatDataContextType {
   clearAllData: () => void;
   isOnline: boolean;
   isSyncing: boolean;
+  isInitializing: boolean;
 }
 
 const CatDataContext = createContext<CatDataContextType | undefined>(undefined);
@@ -76,6 +77,7 @@ export const CatDataProvider: React.FC<{ children: ReactNode }> = ({ children })
   const [photos, setPhotos] = useState<PhotoEntry[]>([]);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(true);
   
   const syncTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastSyncRef = useRef<Date | null>(null);
@@ -183,6 +185,9 @@ export const CatDataProvider: React.FC<{ children: ReactNode }> = ({ children })
   // Load data on mount - try cloud first, then localStorage
   useEffect(() => {
     const initData = async () => {
+      console.log('🔄 Initializing app data...');
+      setIsInitializing(true);
+      
       // Try cloud first
       const cloudLoaded = await loadFromCloud();
       
@@ -252,6 +257,10 @@ export const CatDataProvider: React.FC<{ children: ReactNode }> = ({ children })
           }
         }
       }
+      
+      // Done initializing
+      setIsInitializing(false);
+      console.log('✅ Initialization complete');
     };
     
     initData();
@@ -403,7 +412,8 @@ export const CatDataProvider: React.FC<{ children: ReactNode }> = ({ children })
         deleteEntry,
         clearAllData,
         isOnline,
-        isSyncing
+        isSyncing,
+        isInitializing
       }}
     >
       {children}

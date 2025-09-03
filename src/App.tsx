@@ -1,6 +1,7 @@
 import { ChakraProvider } from '@chakra-ui/react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { CatDataProvider } from './contexts/CatDataContext';
+import InitializingScreen from './components/InitializingScreen';
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
 import WashroomTracking from './pages/WashroomTracking';
@@ -18,22 +19,24 @@ function App() {
   return (
     <ChakraProvider theme={theme}>
       <CatDataProvider>
-        <Router>
-          <Routes>
-            <Route path="/" element={<Layout />}>
-              <Route index element={<Dashboard />} />
-              <Route path="calendar" element={<Calendar />} />
-              <Route path="washroom" element={<WashroomTracking />} />
-              <Route path="food" element={<FoodTracking />} />
-              <Route path="sleep" element={<SleepTracking />} />
-              <Route path="weight" element={<WeightTracking />} />
-              <Route path="photos" element={<PhotoGallery />} />
-              <Route path="analytics" element={<Analytics />} />
-              <Route path="profile" element={<Profile />} />
-              <Route path="export" element={<Export />} />
-            </Route>
-          </Routes>
-        </Router>
+        <InitializingScreen>
+          <Router>
+            <Routes>
+              <Route path="/" element={<Layout />}>
+                <Route index element={<Dashboard />} />
+                <Route path="calendar" element={<Calendar />} />
+                <Route path="washroom" element={<WashroomTracking />} />
+                <Route path="food" element={<FoodTracking />} />
+                <Route path="sleep" element={<SleepTracking />} />
+                <Route path="weight" element={<WeightTracking />} />
+                <Route path="photos" element={<PhotoGallery />} />
+                <Route path="analytics" element={<Analytics />} />
+                <Route path="profile" element={<Profile />} />
+                <Route path="export" element={<Export />} />
+              </Route>
+            </Routes>
+          </Router>
+        </InitializingScreen>
       </CatDataProvider>
     </ChakraProvider>
   );
