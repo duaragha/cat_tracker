@@ -1,9 +1,16 @@
-const API_URL = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+// Check if we're in production (Railway) or development
+const isProduction = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
+
+// Use the Railway backend URL if in production and no env var is set
+const API_URL = import.meta.env.VITE_API_BASE_URL || 
+                import.meta.env.VITE_API_URL || 
+                (isProduction ? 'https://clever-generosity-production.up.railway.app/api' : 'http://localhost:3001/api');
 
 // Debug logging to see what URL is being used
-console.log('API URL Configuration:', {
+console.log('🔧 API URL Configuration:', {
   VITE_API_BASE_URL: import.meta.env.VITE_API_BASE_URL,
   VITE_API_URL: import.meta.env.VITE_API_URL,
+  isProduction,
   Final_API_URL: API_URL
 });
 
