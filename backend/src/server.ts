@@ -20,20 +20,55 @@ app.get('/api/profile', async (req, res) => {
   }
 });
 
+app.delete('/api/profile/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    // Delete all related data first
+    await runQuery('DELETE FROM washroom_entries WHERE cat_id = ?', [id]);
+    await runQuery('DELETE FROM food_entries WHERE cat_id = ?', [id]);
+    await runQuery('DELETE FROM sleep_entries WHERE cat_id = ?', [id]);
+    await runQuery('DELETE FROM weight_entries WHERE cat_id = ?', [id]);
+    await runQuery('DELETE FROM photo_entries WHERE cat_id = ?', [id]);
+    // Then delete the profile
+    await runQuery('DELETE FROM cat_profiles WHERE id = ?', [id]);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting profile:', error);
+    res.status(500).json({ error: 'Failed to delete profile' });
+  }
+});
+
 app.post('/api/profile', async (req, res) => {
   try {
     const { name, breed, birthDate, gotchaDate, weight, photoUrl } = req.body;
-    const id = uuidv4();
-    await runQuery(
-      `INSERT INTO cat_profiles (id, name, breed, birth_date, gotcha_date, weight, photo_url)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [id, name, breed, birthDate, gotchaDate, weight, photoUrl]
-    );
-    const profile = await getQuery('SELECT * FROM cat_profiles WHERE id = ?', [id]);
-    res.json(profile);
+    
+    // Check if a profile already exists
+    const existingProfile = await getQuery('SELECT * FROM cat_profiles ORDER BY created_at DESC LIMIT 1');
+    
+    if (existingProfile) {
+      // Update existing profile
+      await runQuery(
+        `UPDATE cat_profiles 
+         SET name = ?, breed = ?, birth_date = ?, gotcha_date = ?, weight = ?, photo_url = ?, updated_at = CURRENT_TIMESTAMP
+         WHERE id = ?`,
+        [name, breed, birthDate, gotchaDate, weight, photoUrl, existingProfile.id]
+      );
+      const profile = await getQuery('SELECT * FROM cat_profiles WHERE id = ?', [existingProfile.id]);
+      res.json(profile);
+    } else {
+      // Create new profile
+      const id = uuidv4();
+      await runQuery(
+        `INSERT INTO cat_profiles (id, name, breed, birth_date, gotcha_date, weight, photo_url)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [id, name, breed, birthDate, gotchaDate, weight, photoUrl]
+      );
+      const profile = await getQuery('SELECT * FROM cat_profiles WHERE id = ?', [id]);
+      res.json(profile);
+    }
   } catch (error) {
-    console.error('Error creating profile:', error);
-    res.status(500).json({ error: 'Failed to create profile' });
+    console.error('Error creating/updating profile:', error);
+    res.status(500).json({ error: 'Failed to create/update profile' });
   }
 });
 
