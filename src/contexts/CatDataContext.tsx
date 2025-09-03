@@ -65,60 +65,69 @@ export const CatDataProvider: React.FC<{ children: ReactNode }> = ({ children })
     try {
       // Load profile first
       const profileData = await ApiService.profile.get();
-      if (profileData) {
-        const profile = {
-          ...profileData,
-          birthDate: parseDate(profileData.birthDate),
-          gotchaDate: parseDate(profileData.gotchaDate),
-          createdAt: parseDate(profileData.createdAt) || new Date(),
-          updatedAt: parseDate(profileData.updatedAt) || new Date()
-        };
-        setCatProfileState(profile);
-
-        // Load all entries for this cat
-        const [washroomData, foodData, sleepData, weightData, photosData] = await Promise.all([
-          ApiService.washroom.getAll(profile.id).catch(() => []),
-          ApiService.food.getAll(profile.id).catch(() => []),
-          ApiService.sleep.getAll(profile.id).catch(() => []),
-          ApiService.weight.getAll(profile.id).catch(() => []),
-          ApiService.photos.getAll(profile.id).catch(() => [])
-        ]);
-
-        // Parse dates for all entries
-        setWashroomEntries(washroomData.map((entry: any) => ({
-          ...entry,
-          timestamp: parseDate(entry.timestamp) || new Date(),
-          createdAt: parseDate(entry.createdAt) || new Date()
-        })));
-
-        setFoodEntries(foodData.map((entry: any) => ({
-          ...entry,
-          timestamp: parseDate(entry.timestamp) || new Date(),
-          createdAt: parseDate(entry.createdAt) || new Date()
-        })));
-
-        setSleepEntries(sleepData.map((entry: any) => ({
-          ...entry,
-          startTime: parseDate(entry.startTime) || new Date(),
-          endTime: parseDate(entry.endTime) || new Date(),
-          createdAt: parseDate(entry.createdAt) || new Date()
-        })));
-
-        setWeightEntries(weightData.map((entry: any) => ({
-          ...entry,
-          measurementDate: parseDate(entry.measurementDate) || new Date(),
-          createdAt: parseDate(entry.createdAt) || new Date()
-        })));
-
-        setPhotos(photosData.map((photo: any) => ({
-          ...photo,
-          uploadDate: parseDate(photo.uploadDate) || new Date(),
-          createdAt: parseDate(photo.createdAt) || new Date()
-        })));
+      
+      // If no profile exists yet, that's OK - user will create one
+      if (!profileData) {
+        console.log('No profile found - user needs to create one');
+        setIsLoading(false);
+        return;
       }
+
+      const profile = {
+        ...profileData,
+        birthDate: parseDate(profileData.birth_date || profileData.birthDate),
+        gotchaDate: parseDate(profileData.gotcha_date || profileData.gotchaDate),
+        createdAt: parseDate(profileData.created_at || profileData.createdAt) || new Date(),
+        updatedAt: parseDate(profileData.updated_at || profileData.updatedAt) || new Date()
+      };
+      setCatProfileState(profile);
+
+      // Load all entries for this cat
+      const [washroomData, foodData, sleepData, weightData, photosData] = await Promise.all([
+        ApiService.washroom.getAll(profile.id).catch(() => []),
+        ApiService.food.getAll(profile.id).catch(() => []),
+        ApiService.sleep.getAll(profile.id).catch(() => []),
+        ApiService.weight.getAll(profile.id).catch(() => []),
+        ApiService.photos.getAll(profile.id).catch(() => [])
+      ]);
+
+      // Parse dates for all entries
+      setWashroomEntries(washroomData.map((entry: any) => ({
+        ...entry,
+        timestamp: parseDate(entry.timestamp) || new Date(),
+        createdAt: parseDate(entry.created_at || entry.createdAt) || new Date()
+      })));
+
+      setFoodEntries(foodData.map((entry: any) => ({
+        ...entry,
+        timestamp: parseDate(entry.timestamp) || new Date(),
+        createdAt: parseDate(entry.created_at || entry.createdAt) || new Date()
+      })));
+
+      setSleepEntries(sleepData.map((entry: any) => ({
+        ...entry,
+        startTime: parseDate(entry.start_time || entry.startTime) || new Date(),
+        endTime: parseDate(entry.end_time || entry.endTime) || new Date(),
+        createdAt: parseDate(entry.created_at || entry.createdAt) || new Date()
+      })));
+
+      setWeightEntries(weightData.map((entry: any) => ({
+        ...entry,
+        measurementDate: parseDate(entry.measurement_date || entry.measurementDate) || new Date(),
+        createdAt: parseDate(entry.created_at || entry.createdAt) || new Date()
+      })));
+
+      setPhotos(photosData.map((photo: any) => ({
+        ...photo,
+        uploadDate: parseDate(photo.upload_date || photo.uploadDate) || new Date(),
+        createdAt: parseDate(photo.created_at || photo.createdAt) || new Date()
+      })));
     } catch (err) {
       console.error('Error loading data:', err);
-      setError('Failed to load data. Please refresh the page.');
+      // Only show error if it's not a 404 (no profile found)
+      if (err instanceof Error && !err.message.includes('404')) {
+        setError('Failed to connect to server. Please check your connection.');
+      }
     } finally {
       setIsLoading(false);
     }

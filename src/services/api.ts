@@ -9,6 +9,8 @@ console.log('API URL Configuration:', {
 
 export class ApiService {
   private static async request(endpoint: string, options?: RequestInit) {
+    console.log(`API Request: ${options?.method || 'GET'} ${API_URL}${endpoint}`);
+    
     const response = await fetch(`${API_URL}${endpoint}`, {
       ...options,
       headers: {
@@ -18,10 +20,13 @@ export class ApiService {
     });
 
     if (!response.ok) {
+      console.error(`API Error: ${response.status} ${response.statusText}`);
       throw new Error(`API Error: ${response.statusText}`);
     }
 
-    return response.json();
+    const data = await response.json();
+    console.log(`API Response:`, data);
+    return data;
   }
 
   static profile = {
