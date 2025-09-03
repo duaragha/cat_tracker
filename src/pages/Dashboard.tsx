@@ -21,6 +21,7 @@ import { FaPaw, FaUtensils, FaBed, FaWeight, FaCamera, FaToilet } from 'react-ic
 import { useCatData } from '../contexts/CatDataContext';
 import { format, isToday } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
+import SyncControls from '../components/SyncControls';
 
 const Dashboard = () => {
   const { 
@@ -118,6 +119,9 @@ const Dashboard = () => {
   return (
     <Container maxW="container.xl" py={8}>
       <VStack spacing={8} align="stretch">
+        {/* Sync Controls */}
+        <SyncControls />
+        
         {/* Header */}
         <Box>
           <HStack justify="space-between" align="center">
