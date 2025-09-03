@@ -21,7 +21,6 @@ import { FaPaw, FaUtensils, FaBed, FaWeight, FaCamera, FaToilet } from 'react-ic
 import { useCatData } from '../contexts/CatDataContext';
 import { format, isToday } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
-import SyncIndicator from '../components/SyncIndicator';
 
 const Dashboard = () => {
   const { 
@@ -123,13 +122,10 @@ const Dashboard = () => {
         <Box>
           <HStack justify="space-between" align="center">
             <VStack align="start" spacing={1}>
-              <HStack>
-                <Heading size="xl">
-                  <Icon as={FaPaw} mr={2} />
-                  {catProfile.name}'s Dashboard
-                </Heading>
-                <SyncIndicator />
-              </HStack>
+              <Heading size="xl">
+                <Icon as={FaPaw} mr={2} />
+                {catProfile.name}'s Dashboard
+              </Heading>
               <Text color="gray.600">
                 {format(new Date(), 'EEEE, MMMM d, yyyy')}
               </Text>
