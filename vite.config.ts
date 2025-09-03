@@ -10,7 +10,12 @@ export default defineConfig(({ mode }) => {
     plugins: [react()],
     preview: {
       port: port,
-      host: '0.0.0.0'
+      host: '0.0.0.0',
+      allowedHosts: [
+        'graceful-optimism-production.up.railway.app',
+        '.up.railway.app',
+        'localhost'
+      ]
     },
     server: {
       port: 5173,
