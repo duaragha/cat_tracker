@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
-import { ApiService } from '../services/api';
 import type { 
   CatProfile, 
   WashroomEntry, 
@@ -18,17 +17,14 @@ interface CatDataContextType {
   sleepEntries: SleepEntry[];
   weightEntries: WeightEntry[];
   photos: PhotoEntry[];
-  isLoading: boolean;
-  error: string | null;
-  setCatProfile: (profile: CatProfile) => Promise<void>;
-  addWashroomEntry: (entry: Omit<WashroomEntry, 'id' | 'catId' | 'createdAt'>) => Promise<void>;
-  addFoodEntry: (entry: Omit<FoodEntry, 'id' | 'catId' | 'createdAt'>) => Promise<void>;
-  addSleepEntry: (entry: Omit<SleepEntry, 'id' | 'catId' | 'createdAt' | 'duration'>) => Promise<void>;
-  addWeightEntry: (entry: Omit<WeightEntry, 'id' | 'catId' | 'createdAt'>) => Promise<void>;
-  addPhoto: (photo: Omit<PhotoEntry, 'id' | 'catId' | 'createdAt'>) => Promise<void>;
-  deleteEntry: (type: keyof CatData, id: string) => Promise<void>;
+  setCatProfile: (profile: CatProfile) => void;
+  addWashroomEntry: (entry: Omit<WashroomEntry, 'id' | 'catId' | 'createdAt'>) => void;
+  addFoodEntry: (entry: Omit<FoodEntry, 'id' | 'catId' | 'createdAt'>) => void;
+  addSleepEntry: (entry: Omit<SleepEntry, 'id' | 'catId' | 'createdAt' | 'duration'>) => void;
+  addWeightEntry: (entry: Omit<WeightEntry, 'id' | 'catId' | 'createdAt'>) => void;
+  addPhoto: (photo: Omit<PhotoEntry, 'id' | 'catId' | 'createdAt'>) => void;
+  deleteEntry: (type: keyof CatData, id: string) => void;
   clearAllData: () => void;
-  refreshData: () => Promise<void>;
 }
 
 const CatDataContext = createContext<CatDataContextType | undefined>(undefined);
@@ -41,312 +37,180 @@ export const useCatData = () => {
   return context;
 };
 
+const LOCAL_STORAGE_KEY = 'catTrackerData';
+
+const generateId = () => `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
 export const CatDataProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [catProfile, setCatProfileState] = useState<CatProfile | null>(null);
+  const [catProfile, setCatProfile] = useState<CatProfile | null>(null);
   const [washroomEntries, setWashroomEntries] = useState<WashroomEntry[]>([]);
   const [foodEntries, setFoodEntries] = useState<FoodEntry[]>([]);
   const [sleepEntries, setSleepEntries] = useState<SleepEntry[]>([]);
   const [weightEntries, setWeightEntries] = useState<WeightEntry[]>([]);
   const [photos, setPhotos] = useState<PhotoEntry[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  // Helper function to convert date strings to Date objects
-  const parseDate = (dateString: string | Date | undefined): Date | undefined => {
-    if (!dateString) return undefined;
-    return typeof dateString === 'string' ? new Date(dateString) : dateString;
-  };
-
-  // Load all data from API on mount
-  const loadData = async () => {
-    setIsLoading(true);
-    setError(null);
-    
-    try {
-      // Load profile first
-      const profileData = await ApiService.profile.get();
-      
-      // If no profile exists yet, that's OK - user will create one
-      if (!profileData) {
-        console.log('No profile found - user needs to create one');
-        setIsLoading(false);
-        return;
-      }
-
-      const profile = {
-        ...profileData,
-        birthDate: parseDate(profileData.birth_date || profileData.birthDate),
-        gotchaDate: parseDate(profileData.gotcha_date || profileData.gotchaDate),
-        createdAt: parseDate(profileData.created_at || profileData.createdAt) || new Date(),
-        updatedAt: parseDate(profileData.updated_at || profileData.updatedAt) || new Date()
-      };
-      setCatProfileState(profile);
-
-      // Load all entries for this cat
-      const [washroomData, foodData, sleepData, weightData, photosData] = await Promise.all([
-        ApiService.washroom.getAll(profile.id).catch(() => []),
-        ApiService.food.getAll(profile.id).catch(() => []),
-        ApiService.sleep.getAll(profile.id).catch(() => []),
-        ApiService.weight.getAll(profile.id).catch(() => []),
-        ApiService.photos.getAll(profile.id).catch(() => [])
-      ]);
-
-      // Parse dates for all entries
-      setWashroomEntries(washroomData.map((entry: any) => ({
-        ...entry,
-        timestamp: parseDate(entry.timestamp) || new Date(),
-        createdAt: parseDate(entry.created_at || entry.createdAt) || new Date()
-      })));
-
-      setFoodEntries(foodData.map((entry: any) => ({
-        ...entry,
-        timestamp: parseDate(entry.timestamp) || new Date(),
-        createdAt: parseDate(entry.created_at || entry.createdAt) || new Date()
-      })));
-
-      setSleepEntries(sleepData.map((entry: any) => ({
-        ...entry,
-        startTime: parseDate(entry.start_time || entry.startTime) || new Date(),
-        endTime: parseDate(entry.end_time || entry.endTime) || new Date(),
-        createdAt: parseDate(entry.created_at || entry.createdAt) || new Date()
-      })));
-
-      setWeightEntries(weightData.map((entry: any) => ({
-        ...entry,
-        measurementDate: parseDate(entry.measurement_date || entry.measurementDate) || new Date(),
-        createdAt: parseDate(entry.created_at || entry.createdAt) || new Date()
-      })));
-
-      setPhotos(photosData.map((photo: any) => ({
-        ...photo,
-        uploadDate: parseDate(photo.upload_date || photo.uploadDate) || new Date(),
-        createdAt: parseDate(photo.created_at || photo.createdAt) || new Date()
-      })));
-    } catch (err) {
-      console.error('Error loading data:', err);
-      // Only show error if it's not a 404 (no profile found)
-      if (err instanceof Error && !err.message.includes('404')) {
-        setError('Failed to connect to server. Please check your connection.');
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Load data on mount
+  // Load data from localStorage on mount
   useEffect(() => {
-    loadData();
+    const savedData = localStorage.getItem(LOCAL_STORAGE_KEY);
+    if (savedData) {
+      try {
+        const parsedData = JSON.parse(savedData);
+        
+        // Convert date strings back to Date objects
+        if (parsedData.catProfile) {
+          setCatProfile({
+            ...parsedData.catProfile,
+            birthDate: parsedData.catProfile.birthDate ? new Date(parsedData.catProfile.birthDate) : undefined,
+            createdAt: new Date(parsedData.catProfile.createdAt),
+            updatedAt: new Date(parsedData.catProfile.updatedAt)
+          });
+        }
+        
+        if (parsedData.washroomEntries) {
+          setWashroomEntries(parsedData.washroomEntries.map((entry: any) => ({
+            ...entry,
+            timestamp: new Date(entry.timestamp),
+            createdAt: new Date(entry.createdAt)
+          })));
+        }
+        
+        if (parsedData.foodEntries) {
+          setFoodEntries(parsedData.foodEntries.map((entry: any) => ({
+            ...entry,
+            timestamp: new Date(entry.timestamp),
+            createdAt: new Date(entry.createdAt)
+          })));
+        }
+        
+        if (parsedData.sleepEntries) {
+          setSleepEntries(parsedData.sleepEntries.map((entry: any) => ({
+            ...entry,
+            startTime: new Date(entry.startTime),
+            endTime: new Date(entry.endTime),
+            createdAt: new Date(entry.createdAt)
+          })));
+        }
+        
+        if (parsedData.weightEntries) {
+          setWeightEntries(parsedData.weightEntries.map((entry: any) => ({
+            ...entry,
+            measurementDate: new Date(entry.measurementDate),
+            createdAt: new Date(entry.createdAt)
+          })));
+        }
+        
+        if (parsedData.photos) {
+          setPhotos(parsedData.photos.map((photo: any) => ({
+            ...photo,
+            uploadDate: new Date(photo.uploadDate),
+            createdAt: new Date(photo.createdAt)
+          })));
+        }
+      } catch (error) {
+        console.error('Error loading data from localStorage:', error);
+      }
+    }
   }, []);
 
-  const setCatProfile = async (profile: CatProfile) => {
-    try {
-      let updatedProfile;
-      if (catProfile?.id) {
-        // Update existing profile
-        updatedProfile = await ApiService.profile.update(catProfile.id, {
-          ...profile,
-          updatedAt: new Date()
-        });
-      } else {
-        // Create new profile
-        updatedProfile = await ApiService.profile.create({
-          ...profile,
-          createdAt: new Date(),
-          updatedAt: new Date()
-        });
-      }
-      
-      setCatProfileState({
-        ...updatedProfile,
-        birthDate: parseDate(updatedProfile.birthDate),
-        gotchaDate: parseDate(updatedProfile.gotchaDate),
-        createdAt: parseDate(updatedProfile.createdAt) || new Date(),
-        updatedAt: parseDate(updatedProfile.updatedAt) || new Date()
-      });
+  // Save data to localStorage whenever it changes
+  useEffect(() => {
+    const dataToSave = {
+      catProfile,
+      washroomEntries,
+      foodEntries,
+      sleepEntries,
+      weightEntries,
+      photos
+    };
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(dataToSave));
+  }, [catProfile, washroomEntries, foodEntries, sleepEntries, weightEntries, photos]);
 
-      // If it's a new profile, reload all data
-      if (!catProfile?.id) {
-        await loadData();
-      }
-    } catch (err) {
-      console.error('Error saving profile:', err);
-      setError('Failed to save profile');
-      throw err;
-    }
+  const updateCatProfile = (profile: CatProfile) => {
+    setCatProfile({
+      ...profile,
+      updatedAt: new Date()
+    });
   };
 
-  const addWashroomEntry = async (entry: Omit<WashroomEntry, 'id' | 'catId' | 'createdAt'>) => {
-    if (!catProfile?.id) {
-      setError('Please create a cat profile first');
-      return;
-    }
-
-    try {
-      const newEntry = await ApiService.washroom.create({
-        ...entry,
-        catId: catProfile.id,
-        timestamp: entry.timestamp.toISOString()
-      });
-      
-      setWashroomEntries(prev => [{
-        ...newEntry,
-        timestamp: parseDate(newEntry.timestamp) || new Date(),
-        createdAt: parseDate(newEntry.createdAt) || new Date()
-      }, ...prev]);
-    } catch (err) {
-      console.error('Error adding washroom entry:', err);
-      setError('Failed to add washroom entry');
-      throw err;
-    }
+  const addWashroomEntry = (entry: Omit<WashroomEntry, 'id' | 'catId' | 'createdAt'>) => {
+    const newEntry: WashroomEntry = {
+      ...entry,
+      id: generateId(),
+      catId: catProfile?.id || 'default',
+      createdAt: new Date()
+    };
+    setWashroomEntries(prev => [newEntry, ...prev]);
   };
 
-  const addFoodEntry = async (entry: Omit<FoodEntry, 'id' | 'catId' | 'createdAt'>) => {
-    if (!catProfile?.id) {
-      setError('Please create a cat profile first');
-      return;
-    }
-
-    try {
-      const newEntry = await ApiService.food.create({
-        ...entry,
-        catId: catProfile.id,
-        timestamp: entry.timestamp.toISOString()
-      });
-      
-      setFoodEntries(prev => [{
-        ...newEntry,
-        timestamp: parseDate(newEntry.timestamp) || new Date(),
-        createdAt: parseDate(newEntry.createdAt) || new Date()
-      }, ...prev]);
-    } catch (err) {
-      console.error('Error adding food entry:', err);
-      setError('Failed to add food entry');
-      throw err;
-    }
+  const addFoodEntry = (entry: Omit<FoodEntry, 'id' | 'catId' | 'createdAt'>) => {
+    const newEntry: FoodEntry = {
+      ...entry,
+      id: generateId(),
+      catId: catProfile?.id || 'default',
+      createdAt: new Date()
+    };
+    setFoodEntries(prev => [newEntry, ...prev]);
   };
 
-  const addSleepEntry = async (entry: Omit<SleepEntry, 'id' | 'catId' | 'createdAt' | 'duration'>) => {
-    if (!catProfile?.id) {
-      setError('Please create a cat profile first');
-      return;
-    }
-
-    try {
-      const duration = Math.floor((entry.endTime.getTime() - entry.startTime.getTime()) / 60000);
-      const newEntry = await ApiService.sleep.create({
-        ...entry,
-        catId: catProfile.id,
-        startTime: entry.startTime.toISOString(),
-        endTime: entry.endTime.toISOString(),
-        duration
-      });
-      
-      setSleepEntries(prev => [{
-        ...newEntry,
-        startTime: parseDate(newEntry.startTime) || new Date(),
-        endTime: parseDate(newEntry.endTime) || new Date(),
-        createdAt: parseDate(newEntry.createdAt) || new Date()
-      }, ...prev]);
-    } catch (err) {
-      console.error('Error adding sleep entry:', err);
-      setError('Failed to add sleep entry');
-      throw err;
-    }
+  const addSleepEntry = (entry: Omit<SleepEntry, 'id' | 'catId' | 'createdAt' | 'duration'>) => {
+    const newEntry: SleepEntry = {
+      ...entry,
+      id: generateId(),
+      catId: catProfile?.id || 'default',
+      duration: Math.floor((entry.endTime.getTime() - entry.startTime.getTime()) / 60000),
+      createdAt: new Date()
+    };
+    setSleepEntries(prev => [newEntry, ...prev]);
   };
 
-  const addWeightEntry = async (entry: Omit<WeightEntry, 'id' | 'catId' | 'createdAt'>) => {
-    if (!catProfile?.id) {
-      setError('Please create a cat profile first');
-      return;
-    }
-
-    try {
-      const newEntry = await ApiService.weight.create({
-        ...entry,
-        catId: catProfile.id,
-        measurementDate: entry.measurementDate.toISOString()
-      });
-      
-      setWeightEntries(prev => [{
-        ...newEntry,
-        measurementDate: parseDate(newEntry.measurementDate) || new Date(),
-        createdAt: parseDate(newEntry.createdAt) || new Date()
-      }, ...prev]);
-    } catch (err) {
-      console.error('Error adding weight entry:', err);
-      setError('Failed to add weight entry');
-      throw err;
-    }
+  const addWeightEntry = (entry: Omit<WeightEntry, 'id' | 'catId' | 'createdAt'>) => {
+    const newEntry: WeightEntry = {
+      ...entry,
+      id: generateId(),
+      catId: catProfile?.id || 'default',
+      createdAt: new Date()
+    };
+    setWeightEntries(prev => [newEntry, ...prev]);
   };
 
-  const addPhoto = async (photo: Omit<PhotoEntry, 'id' | 'catId' | 'createdAt'>) => {
-    if (!catProfile?.id) {
-      setError('Please create a cat profile first');
-      return;
-    }
-
-    try {
-      const newPhoto = await ApiService.photos.create({
-        ...photo,
-        catId: catProfile.id,
-        uploadDate: photo.uploadDate.toISOString()
-      });
-      
-      setPhotos(prev => [{
-        ...newPhoto,
-        uploadDate: parseDate(newPhoto.uploadDate) || new Date(),
-        createdAt: parseDate(newPhoto.createdAt) || new Date()
-      }, ...prev]);
-    } catch (err) {
-      console.error('Error adding photo:', err);
-      setError('Failed to add photo');
-      throw err;
-    }
+  const addPhoto = (photo: Omit<PhotoEntry, 'id' | 'catId' | 'createdAt'>) => {
+    const newPhoto: PhotoEntry = {
+      ...photo,
+      id: generateId(),
+      catId: catProfile?.id || 'default',
+      createdAt: new Date()
+    };
+    setPhotos(prev => [newPhoto, ...prev]);
   };
 
-  const deleteEntry = async (type: keyof CatData, id: string) => {
-    try {
-      switch (type) {
-        case 'washroom':
-          await ApiService.washroom.delete(id);
-          setWashroomEntries(prev => prev.filter(entry => entry.id !== id));
-          break;
-        case 'food':
-          await ApiService.food.delete(id);
-          setFoodEntries(prev => prev.filter(entry => entry.id !== id));
-          break;
-        case 'sleep':
-          await ApiService.sleep.delete(id);
-          setSleepEntries(prev => prev.filter(entry => entry.id !== id));
-          break;
-        case 'weight':
-          await ApiService.weight.delete(id);
-          setWeightEntries(prev => prev.filter(entry => entry.id !== id));
-          break;
-        case 'photos':
-          await ApiService.photos.delete(id);
-          setPhotos(prev => prev.filter(photo => photo.id !== id));
-          break;
-      }
-    } catch (err) {
-      console.error(`Error deleting ${type} entry:`, err);
-      setError(`Failed to delete ${type} entry`);
-      throw err;
+  const deleteEntry = (type: keyof CatData, id: string) => {
+    switch (type) {
+      case 'washroom':
+        setWashroomEntries(prev => prev.filter(entry => entry.id !== id));
+        break;
+      case 'food':
+        setFoodEntries(prev => prev.filter(entry => entry.id !== id));
+        break;
+      case 'sleep':
+        setSleepEntries(prev => prev.filter(entry => entry.id !== id));
+        break;
+      case 'weight':
+        setWeightEntries(prev => prev.filter(entry => entry.id !== id));
+        break;
+      case 'photos':
+        setPhotos(prev => prev.filter(photo => photo.id !== id));
+        break;
     }
   };
 
   const clearAllData = () => {
-    // This now just clears local state - actual deletion would need API endpoints
-    setCatProfileState(null);
+    setCatProfile(null);
     setWashroomEntries([]);
     setFoodEntries([]);
     setSleepEntries([]);
     setWeightEntries([]);
     setPhotos([]);
-  };
-
-  const refreshData = async () => {
-    await loadData();
+    localStorage.removeItem(LOCAL_STORAGE_KEY);
   };
 
   return (
@@ -358,17 +222,14 @@ export const CatDataProvider: React.FC<{ children: ReactNode }> = ({ children })
         sleepEntries,
         weightEntries,
         photos,
-        isLoading,
-        error,
-        setCatProfile,
+        setCatProfile: updateCatProfile,
         addWashroomEntry,
         addFoodEntry,
         addSleepEntry,
         addWeightEntry,
         addPhoto,
         deleteEntry,
-        clearAllData,
-        refreshData
+        clearAllData
       }}
     >
       {children}

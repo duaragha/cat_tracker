@@ -36,7 +36,7 @@ const Profile = () => {
 
   const [photoUrl, setPhotoUrl] = useState(catProfile?.photoUrl || '');
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!formData.name) {
@@ -61,23 +61,14 @@ const Profile = () => {
       updatedAt: new Date()
     };
 
-    try {
-      await setCatProfile(profileData);
-      toast({
-        title: 'Profile updated successfully',
-        status: 'success',
-        duration: 2000,
-        isClosable: true,
-      });
-    } catch (error) {
-      toast({
-        title: 'Failed to save profile',
-        description: 'Please try again',
-        status: 'error',
-        duration: 3000,
-        isClosable: true,
-      });
-    }
+    setCatProfile(profileData);
+
+    toast({
+      title: 'Profile updated successfully',
+      status: 'success',
+      duration: 2000,
+      isClosable: true,
+    });
   };
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {

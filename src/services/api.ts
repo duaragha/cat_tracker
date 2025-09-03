@@ -1,23 +1,7 @@
-// Check if we're in production (Railway) or development
-const isProduction = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
-
-// Use the Railway backend URL if in production and no env var is set
-const API_URL = import.meta.env.VITE_API_BASE_URL || 
-                import.meta.env.VITE_API_URL || 
-                (isProduction ? 'https://clever-generosity-production.up.railway.app/api' : 'http://localhost:3001/api');
-
-// Debug logging to see what URL is being used
-console.log('🔧 API URL Configuration:', {
-  VITE_API_BASE_URL: import.meta.env.VITE_API_BASE_URL,
-  VITE_API_URL: import.meta.env.VITE_API_URL,
-  isProduction,
-  Final_API_URL: API_URL
-});
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
 export class ApiService {
   private static async request(endpoint: string, options?: RequestInit) {
-    console.log(`API Request: ${options?.method || 'GET'} ${API_URL}${endpoint}`);
-    
     const response = await fetch(`${API_URL}${endpoint}`, {
       ...options,
       headers: {
@@ -27,13 +11,10 @@ export class ApiService {
     });
 
     if (!response.ok) {
-      console.error(`API Error: ${response.status} ${response.statusText}`);
       throw new Error(`API Error: ${response.statusText}`);
     }
 
-    const data = await response.json();
-    console.log(`API Response:`, data);
-    return data;
+    return response.json();
   }
 
   static profile = {
