@@ -37,180 +37,326 @@ export const useCatData = () => {
   return context;
 };
 
-const LOCAL_STORAGE_KEY = 'catTrackerData';
+const API_URL = import.meta.env.VITE_API_URL || 'https://clever-generosity-production.up.railway.app/api';
 
-const generateId = () => `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+// Convert snake_case from backend to camelCase for frontend
+const toCamelCase = (obj: any): any => {
+  if (obj === null || obj === undefined) return obj;
+  if (obj instanceof Date) return obj;
+  if (Array.isArray(obj)) return obj.map(toCamelCase);
+  if (typeof obj !== 'object') return obj;
+  
+  return Object.keys(obj).reduce((result, key) => {
+    const camelKey = key.replace(/_([a-z])/g, (g) => g[1].toUpperCase());
+    result[camelKey] = toCamelCase(obj[key]);
+    return result;
+  }, {} as any);
+};
+
+// Convert camelCase from frontend to snake_case for backend
+const toSnakeCase = (obj: any): any => {
+  if (obj === null || obj === undefined) return obj;
+  if (obj instanceof Date) return obj.toISOString();
+  if (Array.isArray(obj)) return obj.map(toSnakeCase);
+  if (typeof obj !== 'object') return obj;
+  
+  return Object.keys(obj).reduce((result, key) => {
+    const snakeKey = key.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`);
+    result[snakeKey] = toSnakeCase(obj[key]);
+    return result;
+  }, {} as any);
+};
 
 export const CatDataProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [catProfile, setCatProfile] = useState<CatProfile | null>(null);
+  const [catProfile, setCatProfileState] = useState<CatProfile | null>(null);
   const [washroomEntries, setWashroomEntries] = useState<WashroomEntry[]>([]);
   const [foodEntries, setFoodEntries] = useState<FoodEntry[]>([]);
   const [sleepEntries, setSleepEntries] = useState<SleepEntry[]>([]);
   const [weightEntries, setWeightEntries] = useState<WeightEntry[]>([]);
   const [photos, setPhotos] = useState<PhotoEntry[]>([]);
 
-  // Load data from localStorage on mount
+  // Load profile on mount
   useEffect(() => {
-    const savedData = localStorage.getItem(LOCAL_STORAGE_KEY);
-    if (savedData) {
-      try {
-        const parsedData = JSON.parse(savedData);
-        
-        // Convert date strings back to Date objects
-        if (parsedData.catProfile) {
-          setCatProfile({
-            ...parsedData.catProfile,
-            birthDate: parsedData.catProfile.birthDate ? new Date(parsedData.catProfile.birthDate) : undefined,
-            createdAt: new Date(parsedData.catProfile.createdAt),
-            updatedAt: new Date(parsedData.catProfile.updatedAt)
-          });
-        }
-        
-        if (parsedData.washroomEntries) {
-          setWashroomEntries(parsedData.washroomEntries.map((entry: any) => ({
-            ...entry,
-            timestamp: new Date(entry.timestamp),
-            createdAt: new Date(entry.createdAt)
-          })));
-        }
-        
-        if (parsedData.foodEntries) {
-          setFoodEntries(parsedData.foodEntries.map((entry: any) => ({
-            ...entry,
-            timestamp: new Date(entry.timestamp),
-            createdAt: new Date(entry.createdAt)
-          })));
-        }
-        
-        if (parsedData.sleepEntries) {
-          setSleepEntries(parsedData.sleepEntries.map((entry: any) => ({
-            ...entry,
-            startTime: new Date(entry.startTime),
-            endTime: new Date(entry.endTime),
-            createdAt: new Date(entry.createdAt)
-          })));
-        }
-        
-        if (parsedData.weightEntries) {
-          setWeightEntries(parsedData.weightEntries.map((entry: any) => ({
-            ...entry,
-            measurementDate: new Date(entry.measurementDate),
-            createdAt: new Date(entry.createdAt)
-          })));
-        }
-        
-        if (parsedData.photos) {
-          setPhotos(parsedData.photos.map((photo: any) => ({
-            ...photo,
-            uploadDate: new Date(photo.uploadDate),
-            createdAt: new Date(photo.createdAt)
-          })));
-        }
-      } catch (error) {
-        console.error('Error loading data from localStorage:', error);
-      }
-    }
+    loadProfile();
   }, []);
 
-  // Save data to localStorage whenever it changes
+  // Load all data when profile changes
   useEffect(() => {
-    const dataToSave = {
-      catProfile,
-      washroomEntries,
-      foodEntries,
-      sleepEntries,
-      weightEntries,
-      photos
-    };
-    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(dataToSave));
-  }, [catProfile, washroomEntries, foodEntries, sleepEntries, weightEntries, photos]);
+    if (catProfile?.id) {
+      loadAllData(catProfile.id);
+    }
+  }, [catProfile?.id]);
 
-  const updateCatProfile = (profile: CatProfile) => {
-    setCatProfile({
-      ...profile,
-      updatedAt: new Date()
-    });
+  const loadProfile = async () => {
+    try {
+      const res = await fetch(`${API_URL}/profile`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data) {
+          const profile = toCamelCase(data);
+          profile.birthDate = data.birth_date ? new Date(data.birth_date) : undefined;
+          profile.gotchaDate = data.gotcha_date ? new Date(data.gotcha_date) : undefined;
+          profile.createdAt = new Date(data.created_at);
+          profile.updatedAt = new Date(data.updated_at);
+          setCatProfileState(profile);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading profile:', error);
+    }
   };
 
-  const addWashroomEntry = (entry: Omit<WashroomEntry, 'id' | 'catId' | 'createdAt'>) => {
-    const newEntry: WashroomEntry = {
-      ...entry,
-      id: generateId(),
-      catId: catProfile?.id || 'default',
-      createdAt: new Date()
-    };
-    setWashroomEntries(prev => [newEntry, ...prev]);
+  const loadAllData = async (catId: string) => {
+    try {
+      // Load all data types in parallel
+      const [washroom, food, sleep, weight, photoData] = await Promise.all([
+        fetch(`${API_URL}/washroom/${catId}`).then(r => r.json()),
+        fetch(`${API_URL}/food/${catId}`).then(r => r.json()),
+        fetch(`${API_URL}/sleep/${catId}`).then(r => r.json()),
+        fetch(`${API_URL}/weight/${catId}`).then(r => r.json()),
+        fetch(`${API_URL}/photos/${catId}`).then(r => r.json())
+      ]);
+
+      // Process washroom entries
+      setWashroomEntries(washroom.map((e: any) => {
+        const entry = toCamelCase(e);
+        entry.timestamp = new Date(e.timestamp);
+        entry.createdAt = new Date(e.created_at);
+        entry.hasBlood = e.has_blood;
+        return entry;
+      }));
+
+      // Process food entries
+      setFoodEntries(food.map((e: any) => {
+        const entry = toCamelCase(e);
+        entry.timestamp = new Date(e.timestamp);
+        entry.createdAt = new Date(e.created_at);
+        return entry;
+      }));
+
+      // Process sleep entries
+      setSleepEntries(sleep.map((e: any) => {
+        const entry = toCamelCase(e);
+        entry.startTime = new Date(e.start_time);
+        entry.endTime = new Date(e.end_time);
+        entry.createdAt = new Date(e.created_at);
+        return entry;
+      }));
+
+      // Process weight entries
+      setWeightEntries(weight.map((e: any) => {
+        const entry = toCamelCase(e);
+        entry.measurementDate = new Date(e.measurement_date);
+        entry.createdAt = new Date(e.created_at);
+        return entry;
+      }));
+
+      // Process photos
+      setPhotos(photoData.map((e: any) => {
+        const entry = toCamelCase(e);
+        entry.uploadDate = new Date(e.upload_date);
+        entry.createdAt = new Date(e.created_at);
+        return entry;
+      }));
+    } catch (error) {
+      console.error('Error loading data:', error);
+    }
   };
 
-  const addFoodEntry = (entry: Omit<FoodEntry, 'id' | 'catId' | 'createdAt'>) => {
-    const newEntry: FoodEntry = {
-      ...entry,
-      id: generateId(),
-      catId: catProfile?.id || 'default',
-      createdAt: new Date()
-    };
-    setFoodEntries(prev => [newEntry, ...prev]);
+  const setCatProfile = async (profile: CatProfile) => {
+    try {
+      const res = await fetch(`${API_URL}/profile`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(toSnakeCase(profile))
+      });
+      
+      if (res.ok) {
+        const data = await res.json();
+        const newProfile = toCamelCase(data);
+        newProfile.birthDate = data.birth_date ? new Date(data.birth_date) : undefined;
+        newProfile.gotchaDate = data.gotcha_date ? new Date(data.gotcha_date) : undefined;
+        newProfile.createdAt = new Date(data.created_at);
+        newProfile.updatedAt = new Date(data.updated_at);
+        setCatProfileState(newProfile);
+      }
+    } catch (error) {
+      console.error('Error saving profile:', error);
+    }
   };
 
-  const addSleepEntry = (entry: Omit<SleepEntry, 'id' | 'catId' | 'createdAt' | 'duration'>) => {
-    const newEntry: SleepEntry = {
-      ...entry,
-      id: generateId(),
-      catId: catProfile?.id || 'default',
-      duration: Math.floor((entry.endTime.getTime() - entry.startTime.getTime()) / 60000),
-      createdAt: new Date()
-    };
-    setSleepEntries(prev => [newEntry, ...prev]);
+  const addWashroomEntry = async (entry: Omit<WashroomEntry, 'id' | 'catId' | 'createdAt'>) => {
+    if (!catProfile?.id) return;
+    
+    try {
+      const res = await fetch(`${API_URL}/washroom`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...toSnakeCase(entry),
+          catId: catProfile.id,
+          timestamp: entry.timestamp.toISOString()
+        })
+      });
+      
+      if (res.ok) {
+        const data = await res.json();
+        const newEntry = toCamelCase(data);
+        newEntry.timestamp = new Date(data.timestamp);
+        newEntry.createdAt = new Date(data.created_at);
+        newEntry.hasBlood = data.has_blood;
+        setWashroomEntries(prev => [newEntry, ...prev]);
+      }
+    } catch (error) {
+      console.error('Error adding washroom entry:', error);
+    }
   };
 
-  const addWeightEntry = (entry: Omit<WeightEntry, 'id' | 'catId' | 'createdAt'>) => {
-    const newEntry: WeightEntry = {
-      ...entry,
-      id: generateId(),
-      catId: catProfile?.id || 'default',
-      createdAt: new Date()
-    };
-    setWeightEntries(prev => [newEntry, ...prev]);
+  const addFoodEntry = async (entry: Omit<FoodEntry, 'id' | 'catId' | 'createdAt'>) => {
+    if (!catProfile?.id) return;
+    
+    try {
+      const res = await fetch(`${API_URL}/food`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...toSnakeCase(entry),
+          catId: catProfile.id,
+          timestamp: entry.timestamp.toISOString()
+        })
+      });
+      
+      if (res.ok) {
+        const data = await res.json();
+        const newEntry = toCamelCase(data);
+        newEntry.timestamp = new Date(data.timestamp);
+        newEntry.createdAt = new Date(data.created_at);
+        setFoodEntries(prev => [newEntry, ...prev]);
+      }
+    } catch (error) {
+      console.error('Error adding food entry:', error);
+    }
   };
 
-  const addPhoto = (photo: Omit<PhotoEntry, 'id' | 'catId' | 'createdAt'>) => {
-    const newPhoto: PhotoEntry = {
-      ...photo,
-      id: generateId(),
-      catId: catProfile?.id || 'default',
-      createdAt: new Date()
-    };
-    setPhotos(prev => [newPhoto, ...prev]);
+  const addSleepEntry = async (entry: Omit<SleepEntry, 'id' | 'catId' | 'createdAt' | 'duration'>) => {
+    if (!catProfile?.id) return;
+    
+    try {
+      const res = await fetch(`${API_URL}/sleep`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...toSnakeCase(entry),
+          catId: catProfile.id,
+          startTime: entry.startTime.toISOString(),
+          endTime: entry.endTime.toISOString()
+        })
+      });
+      
+      if (res.ok) {
+        const data = await res.json();
+        const newEntry = toCamelCase(data);
+        newEntry.startTime = new Date(data.start_time);
+        newEntry.endTime = new Date(data.end_time);
+        newEntry.createdAt = new Date(data.created_at);
+        setSleepEntries(prev => [newEntry, ...prev]);
+      }
+    } catch (error) {
+      console.error('Error adding sleep entry:', error);
+    }
   };
 
-  const deleteEntry = (type: keyof CatData, id: string) => {
-    switch (type) {
-      case 'washroom':
-        setWashroomEntries(prev => prev.filter(entry => entry.id !== id));
-        break;
-      case 'food':
-        setFoodEntries(prev => prev.filter(entry => entry.id !== id));
-        break;
-      case 'sleep':
-        setSleepEntries(prev => prev.filter(entry => entry.id !== id));
-        break;
-      case 'weight':
-        setWeightEntries(prev => prev.filter(entry => entry.id !== id));
-        break;
-      case 'photos':
-        setPhotos(prev => prev.filter(photo => photo.id !== id));
-        break;
+  const addWeightEntry = async (entry: Omit<WeightEntry, 'id' | 'catId' | 'createdAt'>) => {
+    if (!catProfile?.id) return;
+    
+    try {
+      const res = await fetch(`${API_URL}/weight`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...toSnakeCase(entry),
+          catId: catProfile.id,
+          measurementDate: entry.measurementDate.toISOString()
+        })
+      });
+      
+      if (res.ok) {
+        const data = await res.json();
+        const newEntry = toCamelCase(data);
+        newEntry.measurementDate = new Date(data.measurement_date);
+        newEntry.createdAt = new Date(data.created_at);
+        setWeightEntries(prev => [newEntry, ...prev]);
+      }
+    } catch (error) {
+      console.error('Error adding weight entry:', error);
+    }
+  };
+
+  const addPhoto = async (photo: Omit<PhotoEntry, 'id' | 'catId' | 'createdAt'>) => {
+    if (!catProfile?.id) return;
+    
+    try {
+      const res = await fetch(`${API_URL}/photos`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...toSnakeCase(photo),
+          catId: catProfile.id,
+          uploadDate: photo.uploadDate.toISOString()
+        })
+      });
+      
+      if (res.ok) {
+        const data = await res.json();
+        const newPhoto = toCamelCase(data);
+        newPhoto.uploadDate = new Date(data.upload_date);
+        newPhoto.createdAt = new Date(data.created_at);
+        setPhotos(prev => [newPhoto, ...prev]);
+      }
+    } catch (error) {
+      console.error('Error adding photo:', error);
+    }
+  };
+
+  const deleteEntry = async (type: keyof CatData, id: string) => {
+    try {
+      const res = await fetch(`${API_URL}/${type}/${id}`, {
+        method: 'DELETE'
+      });
+      
+      if (res.ok) {
+        switch (type) {
+          case 'washroom':
+            setWashroomEntries(prev => prev.filter(entry => entry.id !== id));
+            break;
+          case 'food':
+            setFoodEntries(prev => prev.filter(entry => entry.id !== id));
+            break;
+          case 'sleep':
+            setSleepEntries(prev => prev.filter(entry => entry.id !== id));
+            break;
+          case 'weight':
+            setWeightEntries(prev => prev.filter(entry => entry.id !== id));
+            break;
+          case 'photos':
+            setPhotos(prev => prev.filter(photo => photo.id !== id));
+            break;
+        }
+      }
+    } catch (error) {
+      console.error('Error deleting entry:', error);
     }
   };
 
   const clearAllData = () => {
-    setCatProfile(null);
+    // For now, just clear local state
+    // In a real app, you might want to delete from backend too
+    setCatProfileState(null);
     setWashroomEntries([]);
     setFoodEntries([]);
     setSleepEntries([]);
     setWeightEntries([]);
     setPhotos([]);
-    localStorage.removeItem(LOCAL_STORAGE_KEY);
   };
 
   return (
@@ -222,7 +368,7 @@ export const CatDataProvider: React.FC<{ children: ReactNode }> = ({ children })
         sleepEntries,
         weightEntries,
         photos,
-        setCatProfile: updateCatProfile,
+        setCatProfile,
         addWashroomEntry,
         addFoodEntry,
         addSleepEntry,
