@@ -1,5 +1,12 @@
 const API_URL = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
+// Debug logging to see what URL is being used
+console.log('API URL Configuration:', {
+  VITE_API_BASE_URL: import.meta.env.VITE_API_BASE_URL,
+  VITE_API_URL: import.meta.env.VITE_API_URL,
+  Final_API_URL: API_URL
+});
+
 export class ApiService {
   private static async request(endpoint: string, options?: RequestInit) {
     const response = await fetch(`${API_URL}${endpoint}`, {
