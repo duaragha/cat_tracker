@@ -12,7 +12,6 @@ import {
   Select,
   Textarea,
   useToast,
-  IconButton,
   Text,
   Badge,
   Stat,
@@ -27,7 +26,7 @@ import {
   useColorModeValue,
   StatHelpText
 } from '@chakra-ui/react';
-import { FaUtensils, FaPlus, FaTrash, FaTint, FaBone } from 'react-icons/fa';
+import { FaUtensils, FaPlus, FaTint, FaBone } from 'react-icons/fa';
 import { useState, useMemo, useEffect } from 'react';
 import { useCatData } from '../contexts/CatDataContext';
 import { format, isToday, startOfWeek, endOfWeek, isWithinInterval } from 'date-fns';

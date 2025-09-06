@@ -27,6 +27,7 @@ interface CatDataContextType {
   updateFoodEntry: (entry: FoodEntry) => void;
   updateSleepEntry: (entry: SleepEntry) => void;
   updateWeightEntry: (entry: WeightEntry) => void;
+  updateEntry: (type: keyof CatData, id: string, data: any) => void;
   deleteEntry: (type: keyof CatData, id: string) => void;
   clearAllData: () => void;
 }
@@ -461,6 +462,23 @@ export const CatDataProvider: React.FC<{ children: ReactNode }> = ({ children })
     }
   };
 
+  const updateEntry = (type: keyof CatData, _id: string, data: any) => {
+    switch (type) {
+      case 'washroom':
+        updateWashroomEntry(data);
+        break;
+      case 'food':
+        updateFoodEntry(data);
+        break;
+      case 'sleep':
+        updateSleepEntry(data);
+        break;
+      case 'weight':
+        updateWeightEntry(data);
+        break;
+    }
+  };
+
   const deleteEntry = async (type: keyof CatData, id: string) => {
     try {
       const res = await fetch(`${API_URL}/${type}/${id}`, {
@@ -521,6 +539,7 @@ export const CatDataProvider: React.FC<{ children: ReactNode }> = ({ children })
         updateFoodEntry,
         updateSleepEntry,
         updateWeightEntry,
+        updateEntry,
         deleteEntry,
         clearAllData
       }}

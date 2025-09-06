@@ -1,5 +1,4 @@
 import {
-  Box,
   VStack,
   HStack,
   Heading,
@@ -11,7 +10,6 @@ import {
   Input,
   Textarea,
   useToast,
-  IconButton,
   Text,
   Stat,
   StatLabel,
@@ -23,7 +21,7 @@ import {
   Image,
   SimpleGrid
 } from '@chakra-ui/react';
-import { FaWeight, FaPlus, FaTrash } from 'react-icons/fa';
+import { FaWeight, FaPlus } from 'react-icons/fa';
 import { useState } from 'react';
 import { useCatData } from '../contexts/CatDataContext';
 import { format } from 'date-fns';
@@ -341,7 +339,7 @@ const WeightTracking = () => {
                         )}
                         {entry.photos && entry.photos.length > 0 && (
                           <SimpleGrid columns={2} spacing={2} mt={2} maxW="200px">
-                            {entry.photos.map((photo, photoIndex) => (
+                            {entry.photos.map((photo: string, photoIndex: number) => (
                               <Image
                                 key={photoIndex}
                                 src={photo}
