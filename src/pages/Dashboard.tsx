@@ -18,7 +18,7 @@ import {
   Flex,
   Avatar
 } from '@chakra-ui/react';
-import { FaPaw, FaUtensils, FaBed, FaWeight, FaCamera, FaToilet } from 'react-icons/fa';
+import { FaUtensils, FaBed, FaWeight, FaCamera, FaToilet } from 'react-icons/fa';
 import { useCatData } from '../contexts/CatDataContext';
 import { format, isToday } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
