@@ -211,9 +211,14 @@ export const CatDataProvider: React.FC<{ children: ReactNode }> = ({ children })
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          ...toSnakeCase(entry),
           catId: catProfile.id,
-          timestamp: entry.timestamp.toISOString()
+          timestamp: entry.timestamp.toISOString(),
+          type: entry.type,
+          consistency: entry.consistency,
+          hasBlood: entry.hasBlood,
+          color: entry.color,
+          photos: entry.photos,
+          notes: entry.notes
         })
       });
       
@@ -238,9 +243,15 @@ export const CatDataProvider: React.FC<{ children: ReactNode }> = ({ children })
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          ...toSnakeCase(entry),
           catId: catProfile.id,
-          timestamp: entry.timestamp.toISOString()
+          timestamp: entry.timestamp.toISOString(),
+          foodCategory: entry.foodCategory,
+          foodType: entry.foodType,
+          brand: entry.brand,
+          amount: entry.amount,
+          unit: entry.unit,
+          portionToGrams: entry.portionToGrams,
+          notes: entry.notes
         })
       });
       
@@ -264,10 +275,13 @@ export const CatDataProvider: React.FC<{ children: ReactNode }> = ({ children })
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          ...toSnakeCase(entry),
           catId: catProfile.id,
           startTime: entry.startTime.toISOString(),
-          endTime: entry.endTime.toISOString()
+          endTime: entry.endTime.toISOString(),
+          quality: entry.quality,
+          location: entry.location,
+          customLocation: entry.customLocation,
+          notes: entry.notes
         })
       });
       
@@ -324,9 +338,13 @@ export const CatDataProvider: React.FC<{ children: ReactNode }> = ({ children })
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          ...toSnakeCase(photo),
           catId: catProfile.id,
-          uploadDate: photo.uploadDate.toISOString()
+          uploadDate: photo.uploadDate.toISOString(),
+          imageUrl: photo.imageUrl,
+          week: photo.week,
+          year: photo.year,
+          caption: photo.caption,
+          notes: photo.notes
         })
       });
       

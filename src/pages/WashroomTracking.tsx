@@ -227,21 +227,13 @@ const WashroomTracking = () => {
                     <Select
                       value={formData.color}
                       onChange={(e) => setFormData({ ...formData, color: e.target.value as any })}
-                      sx={{
-                        option: {
-                          _selected: {
-                            bg: getColorDisplay(formData.color),
-                            color: formData.color === 'yellow' ? 'black' : 'white'
-                          }
-                        }
-                      }}
                     >
-                      <option value="yellow" style={{ backgroundColor: '#F6E05E', color: 'black' }}>Yellow</option>
-                      <option value="green" style={{ backgroundColor: '#48BB78', color: 'white' }}>Green</option>
-                      <option value="brown" style={{ backgroundColor: '#8B5A3C', color: 'white' }}>Brown</option>
-                      <option value="dark brown" style={{ backgroundColor: '#5C4033', color: 'white' }}>Dark Brown</option>
-                      <option value="black" style={{ backgroundColor: '#2D3748', color: 'white' }}>Black</option>
-                      <option value="other" style={{ backgroundColor: '#A0AEC0', color: 'white' }}>Other</option>
+                      <option value="yellow">Yellow</option>
+                      <option value="green">Green</option>
+                      <option value="brown">Brown</option>
+                      <option value="dark brown">Dark Brown</option>
+                      <option value="black">Black</option>
+                      <option value="other">Other</option>
                     </Select>
                   </FormControl>
 
