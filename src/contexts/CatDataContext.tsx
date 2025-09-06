@@ -23,6 +23,10 @@ interface CatDataContextType {
   addSleepEntry: (entry: Omit<SleepEntry, 'id' | 'catId' | 'createdAt' | 'duration'>) => void;
   addWeightEntry: (entry: Omit<WeightEntry, 'id' | 'catId' | 'createdAt'>) => void;
   addPhoto: (photo: Omit<PhotoEntry, 'id' | 'catId' | 'createdAt'>) => void;
+  updateWashroomEntry: (entry: WashroomEntry) => void;
+  updateFoodEntry: (entry: FoodEntry) => void;
+  updateSleepEntry: (entry: SleepEntry) => void;
+  updateWeightEntry: (entry: WeightEntry) => void;
   deleteEntry: (type: keyof CatData, id: string) => void;
   clearAllData: () => void;
 }
@@ -146,7 +150,9 @@ export const CatDataProvider: React.FC<{ children: ReactNode }> = ({ children })
       // Process weight entries
       setWeightEntries(weight.map((e: any) => {
         const entry = toCamelCase(e);
-        entry.measurementDate = new Date(e.measurement_date);
+        // Parse date string as local date (YYYY-MM-DD format)
+        const [year, month, day] = e.measurement_date.split('T')[0].split('-').map(Number);
+        entry.measurementDate = new Date(year, month - 1, day, 12, 0, 0);
         entry.createdAt = new Date(e.created_at);
         return entry;
       }));
@@ -299,7 +305,9 @@ export const CatDataProvider: React.FC<{ children: ReactNode }> = ({ children })
       if (res.ok) {
         const data = await res.json();
         const newEntry = toCamelCase(data);
-        newEntry.measurementDate = new Date(data.measurement_date);
+        // Parse date string as local date (YYYY-MM-DD format)
+        const [year, month, day] = data.measurement_date.split('T')[0].split('-').map(Number);
+        newEntry.measurementDate = new Date(year, month - 1, day, 12, 0, 0);
         newEntry.createdAt = new Date(data.created_at);
         setWeightEntries(prev => [newEntry, ...prev]);
       }
@@ -331,6 +339,107 @@ export const CatDataProvider: React.FC<{ children: ReactNode }> = ({ children })
       }
     } catch (error) {
       console.error('Error adding photo:', error);
+    }
+  };
+
+  const updateWashroomEntry = async (entry: WashroomEntry) => {
+    try {
+      const res = await fetch(`${API_URL}/washroom/${entry.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...toSnakeCase(entry),
+          timestamp: entry.timestamp.toISOString()
+        })
+      });
+      
+      if (res.ok) {
+        const data = await res.json();
+        const updatedEntry = toCamelCase(data);
+        updatedEntry.timestamp = new Date(data.timestamp);
+        updatedEntry.createdAt = new Date(data.created_at);
+        updatedEntry.hasBlood = data.has_blood;
+        setWashroomEntries(prev => prev.map(e => e.id === entry.id ? updatedEntry : e));
+      }
+    } catch (error) {
+      console.error('Error updating washroom entry:', error);
+    }
+  };
+
+  const updateFoodEntry = async (entry: FoodEntry) => {
+    try {
+      const res = await fetch(`${API_URL}/food/${entry.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...toSnakeCase(entry),
+          timestamp: entry.timestamp.toISOString()
+        })
+      });
+      
+      if (res.ok) {
+        const data = await res.json();
+        const updatedEntry = toCamelCase(data);
+        updatedEntry.timestamp = new Date(data.timestamp);
+        updatedEntry.createdAt = new Date(data.created_at);
+        setFoodEntries(prev => prev.map(e => e.id === entry.id ? updatedEntry : e));
+      }
+    } catch (error) {
+      console.error('Error updating food entry:', error);
+    }
+  };
+
+  const updateSleepEntry = async (entry: SleepEntry) => {
+    try {
+      const res = await fetch(`${API_URL}/sleep/${entry.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...toSnakeCase(entry),
+          startTime: entry.startTime.toISOString(),
+          endTime: entry.endTime.toISOString()
+        })
+      });
+      
+      if (res.ok) {
+        const data = await res.json();
+        const updatedEntry = toCamelCase(data);
+        updatedEntry.startTime = new Date(data.start_time);
+        updatedEntry.endTime = new Date(data.end_time);
+        updatedEntry.createdAt = new Date(data.created_at);
+        setSleepEntries(prev => prev.map(e => e.id === entry.id ? updatedEntry : e));
+      }
+    } catch (error) {
+      console.error('Error updating sleep entry:', error);
+    }
+  };
+
+  const updateWeightEntry = async (entry: WeightEntry) => {
+    try {
+      // Format date as YYYY-MM-DD to preserve the local date
+      const localDate = entry.measurementDate;
+      const dateStr = `${localDate.getFullYear()}-${String(localDate.getMonth() + 1).padStart(2, '0')}-${String(localDate.getDate()).padStart(2, '0')}`;
+      
+      const res = await fetch(`${API_URL}/weight/${entry.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...toSnakeCase(entry),
+          measurement_date: dateStr
+        })
+      });
+      
+      if (res.ok) {
+        const data = await res.json();
+        const updatedEntry = toCamelCase(data);
+        // Parse date string as local date (YYYY-MM-DD format)
+        const [year, month, day] = data.measurement_date.split('T')[0].split('-').map(Number);
+        updatedEntry.measurementDate = new Date(year, month - 1, day, 12, 0, 0);
+        updatedEntry.createdAt = new Date(data.created_at);
+        setWeightEntries(prev => prev.map(e => e.id === entry.id ? updatedEntry : e));
+      }
+    } catch (error) {
+      console.error('Error updating weight entry:', error);
     }
   };
 
@@ -390,6 +499,10 @@ export const CatDataProvider: React.FC<{ children: ReactNode }> = ({ children })
         addSleepEntry,
         addWeightEntry,
         addPhoto,
+        updateWashroomEntry,
+        updateFoodEntry,
+        updateSleepEntry,
+        updateWeightEntry,
         deleteEntry,
         clearAllData
       }}

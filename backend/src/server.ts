@@ -129,6 +129,24 @@ app.post('/api/washroom', async (req, res) => {
   }
 });
 
+app.put('/api/washroom/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { timestamp, type, consistency, has_blood, color, photos, notes } = req.body;
+    await runQuery(
+      `UPDATE washroom_entries 
+       SET timestamp = ?, type = ?, consistency = ?, has_blood = ?, color = ?, photos = ?, notes = ?
+       WHERE id = ?`,
+      [timestamp, type, consistency, has_blood ? 1 : 0, color, JSON.stringify(photos || []), notes, id]
+    );
+    const entry = await getQuery('SELECT * FROM washroom_entries WHERE id = ?', [id]);
+    res.json({ ...entry, photos: entry.photos ? JSON.parse(entry.photos) : [], has_blood: !!entry.has_blood });
+  } catch (error) {
+    console.error('Error updating washroom entry:', error);
+    res.status(500).json({ error: 'Failed to update entry' });
+  }
+});
+
 // Food routes
 app.get('/api/food/:catId', async (req, res) => {
   try {
@@ -159,6 +177,24 @@ app.post('/api/food', async (req, res) => {
   } catch (error) {
     console.error('Error creating food entry:', error);
     res.status(500).json({ error: 'Failed to create entry' });
+  }
+});
+
+app.put('/api/food/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { timestamp, food_category, food_type, brand, amount, unit, portion_to_grams, notes } = req.body;
+    await runQuery(
+      `UPDATE food_entries 
+       SET timestamp = ?, food_category = ?, food_type = ?, brand = ?, amount = ?, unit = ?, portion_to_grams = ?, notes = ?
+       WHERE id = ?`,
+      [timestamp, food_category, food_type, brand, amount, unit, portion_to_grams, notes, id]
+    );
+    const entry = await getQuery('SELECT * FROM food_entries WHERE id = ?', [id]);
+    res.json(entry);
+  } catch (error) {
+    console.error('Error updating food entry:', error);
+    res.status(500).json({ error: 'Failed to update entry' });
   }
 });
 
@@ -199,6 +235,28 @@ app.post('/api/sleep', async (req, res) => {
   }
 });
 
+app.put('/api/sleep/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { start_time, end_time, quality, location, custom_location, notes } = req.body;
+    const start = new Date(start_time);
+    const end = new Date(end_time);
+    const duration = Math.floor((end.getTime() - start.getTime()) / 60000);
+    
+    await runQuery(
+      `UPDATE sleep_entries 
+       SET start_time = ?, end_time = ?, duration = ?, quality = ?, location = ?, custom_location = ?, notes = ?
+       WHERE id = ?`,
+      [start_time, end_time, duration, quality, location, custom_location, notes, id]
+    );
+    const entry = await getQuery('SELECT * FROM sleep_entries WHERE id = ?', [id]);
+    res.json(entry);
+  } catch (error) {
+    console.error('Error updating sleep entry:', error);
+    res.status(500).json({ error: 'Failed to update entry' });
+  }
+});
+
 // Weight routes
 app.get('/api/weight/:catId', async (req, res) => {
   try {
@@ -229,6 +287,24 @@ app.post('/api/weight', async (req, res) => {
   } catch (error) {
     console.error('Error creating weight entry:', error);
     res.status(500).json({ error: 'Failed to create entry' });
+  }
+});
+
+app.put('/api/weight/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { weight, measurement_date, photos, notes } = req.body;
+    await runQuery(
+      `UPDATE weight_entries 
+       SET weight = ?, measurement_date = ?, photos = ?, notes = ?
+       WHERE id = ?`,
+      [weight, measurement_date, JSON.stringify(photos || []), notes, id]
+    );
+    const entry = await getQuery('SELECT * FROM weight_entries WHERE id = ?', [id]);
+    res.json({ ...entry, photos: entry.photos ? JSON.parse(entry.photos) : [] });
+  } catch (error) {
+    console.error('Error updating weight entry:', error);
+    res.status(500).json({ error: 'Failed to update entry' });
   }
 });
 
