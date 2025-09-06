@@ -1,20 +1,34 @@
+#!/usr/bin/env node
 import { pool } from './pool.js';
+import dotenv from 'dotenv';
 
-export async function initDB() {
+// Load environment variables
+dotenv.config();
+
+async function migrateDatabase() {
+  console.log('Starting database migration to fix table schemas...');
+  
+  if (!process.env.DATABASE_URL) {
+    console.error('DATABASE_URL not set. This migration is for PostgreSQL only.');
+    process.exit(1);
+  }
+
   try {
-    // Drop existing tables to recreate with correct schema
-    // Comment these out after first deployment
-    /*
+    // Drop existing tables with wrong schema
+    console.log('Dropping existing tables...');
     await pool.query('DROP TABLE IF EXISTS photo_entries CASCADE');
     await pool.query('DROP TABLE IF EXISTS weight_entries CASCADE');
     await pool.query('DROP TABLE IF EXISTS sleep_entries CASCADE');
     await pool.query('DROP TABLE IF EXISTS food_entries CASCADE');
     await pool.query('DROP TABLE IF EXISTS washroom_entries CASCADE');
     await pool.query('DROP TABLE IF EXISTS cat_profiles CASCADE');
-    */
+    console.log('Tables dropped successfully');
+
+    // Create tables with correct schema
+    console.log('Creating tables with correct schema...');
     
     await pool.query(`
-      CREATE TABLE IF NOT EXISTS cat_profiles (
+      CREATE TABLE cat_profiles (
         id TEXT PRIMARY KEY,
         name VARCHAR(255) NOT NULL,
         breed VARCHAR(255),
@@ -26,9 +40,10 @@ export async function initDB() {
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
+    console.log('Created cat_profiles table');
 
     await pool.query(`
-      CREATE TABLE IF NOT EXISTS washroom_entries (
+      CREATE TABLE washroom_entries (
         id TEXT PRIMARY KEY,
         cat_id TEXT REFERENCES cat_profiles(id) ON DELETE CASCADE,
         timestamp TIMESTAMP NOT NULL,
@@ -41,9 +56,10 @@ export async function initDB() {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
+    console.log('Created washroom_entries table');
 
     await pool.query(`
-      CREATE TABLE IF NOT EXISTS food_entries (
+      CREATE TABLE food_entries (
         id TEXT PRIMARY KEY,
         cat_id TEXT REFERENCES cat_profiles(id) ON DELETE CASCADE,
         timestamp TIMESTAMP NOT NULL,
@@ -57,9 +73,10 @@ export async function initDB() {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
+    console.log('Created food_entries table');
 
     await pool.query(`
-      CREATE TABLE IF NOT EXISTS sleep_entries (
+      CREATE TABLE sleep_entries (
         id TEXT PRIMARY KEY,
         cat_id TEXT REFERENCES cat_profiles(id) ON DELETE CASCADE,
         start_time TIMESTAMP NOT NULL,
@@ -72,9 +89,10 @@ export async function initDB() {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
+    console.log('Created sleep_entries table');
 
     await pool.query(`
-      CREATE TABLE IF NOT EXISTS weight_entries (
+      CREATE TABLE weight_entries (
         id TEXT PRIMARY KEY,
         cat_id TEXT REFERENCES cat_profiles(id) ON DELETE CASCADE,
         weight DECIMAL(5,2) NOT NULL,
@@ -84,9 +102,10 @@ export async function initDB() {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
+    console.log('Created weight_entries table');
 
     await pool.query(`
-      CREATE TABLE IF NOT EXISTS photo_entries (
+      CREATE TABLE photo_entries (
         id TEXT PRIMARY KEY,
         cat_id TEXT REFERENCES cat_profiles(id) ON DELETE CASCADE,
         image_url TEXT NOT NULL,
@@ -98,10 +117,16 @@ export async function initDB() {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
+    console.log('Created photo_entries table');
 
-    console.log('Database tables initialized');
+    console.log('Migration completed successfully!');
+    console.log('All tables have been recreated with the correct schema.');
+    process.exit(0);
   } catch (error) {
-    console.error('Database initialization error:', error);
-    throw error;
+    console.error('Migration failed:', error);
+    process.exit(1);
   }
 }
+
+// Run the migration
+migrateDatabase();
