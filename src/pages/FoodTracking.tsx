@@ -28,13 +28,14 @@ import {
   StatHelpText
 } from '@chakra-ui/react';
 import { FaUtensils, FaPlus, FaTrash, FaTint, FaBone } from 'react-icons/fa';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useCatData } from '../contexts/CatDataContext';
 import { format, isToday, startOfWeek, endOfWeek, isWithinInterval } from 'date-fns';
 import type { FoodFormData } from '../types';
+import { EditableEntry } from '../components/EditableEntry';
 
 const FoodTracking = () => {
-  const { foodEntries, addFoodEntry, deleteEntry } = useCatData();
+  const { foodEntries, addFoodEntry, deleteEntry, updateEntry } = useCatData();
   const toast = useToast();
   const bgColor = useColorModeValue('white', 'gray.800');
   const borderColor = useColorModeValue('gray.200', 'gray.700');
@@ -49,6 +50,13 @@ const FoodTracking = () => {
     portionToGrams: 10, // 1 portion = 10g default
     notes: ''
   });
+
+  // Auto-change unit to grams when Wet food is selected
+  useEffect(() => {
+    if (formData.foodCategory === 'Wet') {
+      setFormData(prev => ({ ...prev, unit: 'grams', amount: 85 })); // Default 85g for wet food
+    }
+  }, [formData.foodCategory]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -183,16 +191,16 @@ const FoodTracking = () => {
           <CardBody>
             <Stat>
               <StatLabel>Today's Total</StatLabel>
-              <StatNumber>{statistics.today.total}g</StatNumber>
+              <StatNumber>{Math.round(statistics.today.total)}g</StatNumber>
               <StatHelpText>
                 <HStack spacing={3}>
                   <Badge colorScheme="orange">
                     <FaBone style={{ marginRight: '4px' }} />
-                    Dry: {statistics.today.dryTotal}g
+                    Dry: {Math.round(statistics.today.dryTotal)}g
                   </Badge>
                   <Badge colorScheme="blue">
                     <FaTint style={{ marginRight: '4px' }} />
-                    Wet: {statistics.today.wetTotal}g
+                    Wet: {Math.round(statistics.today.wetTotal)}g
                   </Badge>
                 </HStack>
               </StatHelpText>
@@ -229,14 +237,14 @@ const FoodTracking = () => {
           <CardBody>
             <Stat>
               <StatLabel>Daily Average</StatLabel>
-              <StatNumber>{statistics.week.avgPerDay.toFixed(0)}g</StatNumber>
+              <StatNumber>{Math.round(statistics.week.avgPerDay)}g</StatNumber>
               <StatHelpText>
                 <HStack spacing={3}>
                   <Text fontSize="xs">
-                    Dry: {(statistics.week.dryTotal / 7).toFixed(0)}g/day
+                    Dry: {Math.round(statistics.week.dryTotal / 7)}g/day
                   </Text>
                   <Text fontSize="xs">
-                    Wet: {(statistics.week.wetTotal / 7).toFixed(0)}g/day
+                    Wet: {Math.round(statistics.week.wetTotal / 7)}g/day
                   </Text>
                 </HStack>
               </StatHelpText>
@@ -298,9 +306,10 @@ const FoodTracking = () => {
                   <NumberInput
                     value={formData.amount}
                     onChange={(_, value) => setFormData({ ...formData, amount: value })}
-                    min={0.5}
+                    min={1}
                     max={1000}
-                    step={0.5}
+                    step={1}
+                    precision={0}
                   >
                     <NumberInputField />
                     <NumberInputStepper>
@@ -346,7 +355,7 @@ const FoodTracking = () => {
               {formData.unit === 'portions' && (
                 <Box p={3} bg={useColorModeValue('blue.50', 'blue.900')} borderRadius="md">
                   <Text fontSize="sm" fontWeight="medium">
-                    Conversion: {formData.amount} portions × {formData.portionToGrams}g = {getConvertedAmount()}g total
+                    Conversion: {formData.amount} portions × {formData.portionToGrams}g = {Math.round(getConvertedAmount())}g total
                   </Text>
                 </Box>
               )}
@@ -385,14 +394,70 @@ const FoodTracking = () => {
               </Text>
             ) : (
               foodEntries.slice(0, 10).map((entry) => (
-                <Box
+                <EditableEntry
                   key={entry.id}
-                  p={3}
-                  borderWidth={1}
-                  borderColor={borderColor}
-                  borderRadius="md"
-                >
-                  <HStack justify="space-between">
+                  entry={entry}
+                  onSave={(updatedEntry) => {
+                    updateEntry('food', entry.id, updatedEntry);
+                    toast({
+                      title: 'Meal updated',
+                      status: 'success',
+                      duration: 2000,
+                      isClosable: true,
+                    });
+                  }}
+                  onDelete={handleDelete}
+                  fields={[
+                    {
+                      key: 'timestamp',
+                      label: 'Date & Time',
+                      type: 'datetime'
+                    },
+                    {
+                      key: 'foodCategory',
+                      label: 'Category',
+                      type: 'select',
+                      options: [
+                        { value: 'Dry', label: 'Dry Food' },
+                        { value: 'Wet', label: 'Wet Food' }
+                      ]
+                    },
+                    {
+                      key: 'foodType',
+                      label: 'Food Type',
+                      type: 'text'
+                    },
+                    {
+                      key: 'brand',
+                      label: 'Brand',
+                      type: 'text'
+                    },
+                    {
+                      key: 'amount',
+                      label: 'Amount',
+                      type: 'number',
+                      min: 1,
+                      max: 1000,
+                      step: 1
+                    },
+                    {
+                      key: 'unit',
+                      label: 'Unit',
+                      type: 'select',
+                      options: [
+                        { value: 'portions', label: 'Portions' },
+                        { value: 'grams', label: 'Grams' },
+                        { value: 'cups', label: 'Cups' },
+                        { value: 'pieces', label: 'Pieces' }
+                      ]
+                    },
+                    {
+                      key: 'notes',
+                      label: 'Notes',
+                      type: 'textarea'
+                    }
+                  ]}
+                  renderDisplay={(entry) => (
                     <VStack align="start" spacing={1}>
                       <HStack>
                         <Text fontWeight="bold">
@@ -403,12 +468,12 @@ const FoodTracking = () => {
                         </Badge>
                         <Badge colorScheme="green">
                           {entry.unit === 'portions' 
-                            ? `${entry.amount * (entry.portionToGrams || 10)}g (${entry.amount} portions)`
+                            ? `${Math.round(entry.amount * (entry.portionToGrams || 10))}g (${entry.amount} portions)`
                             : entry.unit === 'cups'
-                            ? `${entry.amount * 120}g (${entry.amount} cups)`
+                            ? `${Math.round(entry.amount * 120)}g (${entry.amount} cups)`
                             : entry.unit === 'pieces'
-                            ? `${entry.amount * 10}g (${entry.amount} pieces)`
-                            : `${entry.amount}g`}
+                            ? `${Math.round(entry.amount * 10)}g (${entry.amount} pieces)`
+                            : `${Math.round(entry.amount)}g`}
                         </Badge>
                       </HStack>
                       <Text>
@@ -421,16 +486,8 @@ const FoodTracking = () => {
                         </Text>
                       )}
                     </VStack>
-                    <IconButton
-                      icon={<FaTrash />}
-                      aria-label="Delete entry"
-                      size="sm"
-                      variant="ghost"
-                      colorScheme="red"
-                      onClick={() => handleDelete(entry.id)}
-                    />
-                  </HStack>
-                </Box>
+                  )}
+                />
               ))
             )}
           </VStack>

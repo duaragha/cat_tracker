@@ -29,6 +29,7 @@ import { useCatData } from '../contexts/CatDataContext';
 import { format } from 'date-fns';
 import type { WeightFormData } from '../types';
 import { PhotoUpload } from '../components/PhotoUpload';
+import { EditableEntry } from '../components/EditableEntry';
 import {
   LineChart,
   Line,
@@ -41,7 +42,7 @@ import {
 } from 'recharts';
 
 const WeightTracking = () => {
-  const { weightEntries, addWeightEntry, deleteEntry, catProfile } = useCatData();
+  const { weightEntries, addWeightEntry, deleteEntry, updateEntry, catProfile } = useCatData();
   const toast = useToast();
   const bgColor = useColorModeValue('white', 'gray.800');
   const borderColor = useColorModeValue('gray.200', 'gray.700');
@@ -280,14 +281,45 @@ const WeightTracking = () => {
                 const change = prevWeight ? entry.weight - prevWeight : 0;
                 
                 return (
-                  <Box
+                  <EditableEntry
                     key={entry.id}
-                    p={3}
-                    borderWidth={1}
-                    borderColor={borderColor}
-                    borderRadius="md"
-                  >
-                    <HStack justify="space-between">
+                    entry={entry}
+                    onSave={(updatedEntry) => {
+                      // Convert weight back to kg for storage
+                      const updatedWithKg = {
+                        ...updatedEntry,
+                        weight: updatedEntry.weight / 2.20462
+                      };
+                      updateEntry('weight', entry.id, updatedWithKg);
+                      toast({
+                        title: 'Weight updated',
+                        status: 'success',
+                        duration: 2000,
+                        isClosable: true,
+                      });
+                    }}
+                    onDelete={handleDelete}
+                    fields={[
+                      {
+                        key: 'measurementDate',
+                        label: 'Date',
+                        type: 'date'
+                      },
+                      {
+                        key: 'weight',
+                        label: 'Weight (lb)',
+                        type: 'number',
+                        min: 0.2,
+                        max: 110,
+                        step: 0.1
+                      },
+                      {
+                        key: 'notes',
+                        label: 'Notes',
+                        type: 'textarea'
+                      }
+                    ]}
+                    renderDisplay={(entry) => (
                       <VStack align="start" spacing={1}>
                         <HStack>
                           <Text fontWeight="bold">
@@ -326,16 +358,8 @@ const WeightTracking = () => {
                           </SimpleGrid>
                         )}
                       </VStack>
-                      <IconButton
-                        icon={<FaTrash />}
-                        aria-label="Delete entry"
-                        size="sm"
-                        variant="ghost"
-                        colorScheme="red"
-                        onClick={() => handleDelete(entry.id)}
-                      />
-                    </HStack>
-                  </Box>
+                    )}
+                  />
                 );
               })
             )}

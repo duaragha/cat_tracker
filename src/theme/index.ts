@@ -36,6 +36,34 @@ const theme = extendTheme({
         },
       },
     },
+    Select: {
+      baseStyle: {
+        field: {
+          option: {
+            bg: 'white',
+            color: 'gray.800',
+            _hover: {
+              bg: 'gray.100',
+            },
+            _selected: {
+              bg: 'blue.100',
+              color: 'blue.800',
+            },
+            _dark: {
+              bg: 'gray.800',
+              color: 'white',
+              _hover: {
+                bg: 'gray.700',
+              },
+              _selected: {
+                bg: 'blue.900',
+                color: 'blue.100',
+              },
+            },
+          },
+        },
+      },
+    },
   },
   config: {
     initialColorMode: 'light',
