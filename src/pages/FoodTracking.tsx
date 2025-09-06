@@ -63,19 +63,14 @@ const FoodTracking = () => {
       return;
     }
 
-    // Convert portions to grams if needed
-    let finalAmount = formData.amount;
-    if (formData.unit === 'portions') {
-      finalAmount = formData.amount * (formData.portionToGrams || 10);
-    }
-
+    // Keep amount as entered, store unit and conversion factor
     addFoodEntry({
       timestamp: new Date(formData.timestamp),
       foodCategory: formData.foodCategory,
       foodType: formData.foodType,
       brand: formData.brand,
-      amount: finalAmount,
-      unit: formData.unit === 'portions' ? 'grams' : formData.unit,
+      amount: formData.amount,
+      unit: formData.unit,
       portionToGrams: formData.unit === 'portions' ? formData.portionToGrams : undefined,
       notes: formData.notes
     });
@@ -83,8 +78,8 @@ const FoodTracking = () => {
     toast({
       title: 'Food intake logged',
       description: formData.unit === 'portions' ? 
-        `${formData.amount} portions (${finalAmount}g) of ${formData.foodCategory} food` : 
-        `${formData.amount}${formData.unit} of ${formData.foodCategory} food`,
+        `${formData.amount} portions (${formData.amount * (formData.portionToGrams || 10)}g) of ${formData.foodCategory} food` : 
+        `${formData.amount} ${formData.unit} of ${formData.foodCategory} food`,
       status: 'success',
       duration: 3000,
       isClosable: true,
@@ -130,6 +125,7 @@ const FoodTracking = () => {
       entries.forEach(entry => {
         const amount = entry.unit === 'grams' ? entry.amount : 
                       entry.unit === 'cups' ? entry.amount * 120 : // 1 cup ≈ 120g for dry food
+                      entry.unit === 'portions' ? entry.amount * (entry.portionToGrams || 10) : // portions with conversion
                       entry.amount * 10; // pieces default to 10g each
 
         if (entry.foodCategory === 'Dry') {

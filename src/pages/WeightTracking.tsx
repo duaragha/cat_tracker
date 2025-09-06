@@ -19,11 +19,6 @@ import {
   StatHelpText,
   StatArrow,
   Grid,
-  NumberInput,
-  NumberInputField,
-  NumberInputStepper,
-  NumberIncrementStepper,
-  NumberDecrementStepper,
   useColorModeValue,
   Image,
   SimpleGrid
@@ -62,9 +57,13 @@ const WeightTracking = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Create date at noon to avoid timezone issues
+    const [year, month, day] = formData.measurementDate.split('-').map(Number);
+    const measurementDate = new Date(year, month - 1, day, 12, 0, 0);
+    
     addWeightEntry({
       weight: formData.weight / 2.20462, // Convert lb to kg for storage
-      measurementDate: new Date(formData.measurementDate),
+      measurementDate: measurementDate,
       notes: formData.notes,
       photos: formData.photos
     });
@@ -212,20 +211,15 @@ const WeightTracking = () => {
               <HStack spacing={4}>
                 <FormControl isRequired flex={1}>
                   <FormLabel>Weight (lb)</FormLabel>
-                  <NumberInput
+                  <Input
+                    type="number"
                     value={formData.weight}
-                    onChange={(_, value) => setFormData({ ...formData, weight: value })}
+                    onChange={(e) => setFormData({ ...formData, weight: parseFloat(e.target.value) || 0 })}
                     min={0.2}
                     max={110}
                     step={0.1}
-                    precision={1}
-                  >
-                    <NumberInputField />
-                    <NumberInputStepper>
-                      <NumberIncrementStepper />
-                      <NumberDecrementStepper />
-                    </NumberInputStepper>
-                  </NumberInput>
+                    placeholder="Enter weight in pounds"
+                  />
                 </FormControl>
 
                 <FormControl isRequired flex={1}>

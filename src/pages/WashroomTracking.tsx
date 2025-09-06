@@ -203,50 +203,54 @@ const WashroomTracking = () => {
                   </Select>
                 </FormControl>
 
-                <FormControl flex={1}>
-                  <FormLabel>Consistency</FormLabel>
-                  <Select
-                    value={formData.consistency}
-                    onChange={(e) => setFormData({ ...formData, consistency: e.target.value as any })}
-                  >
-                    <option value="firm">Firm</option>
-                    <option value="soft">Soft</option>
-                    <option value="half n half">Half n Half</option>
-                    <option value="diarrhea">Diarrhea</option>
-                  </Select>
-                </FormControl>
+                {formData.type !== 'pee' && (
+                  <FormControl flex={1}>
+                    <FormLabel>Consistency</FormLabel>
+                    <Select
+                      value={formData.consistency}
+                      onChange={(e) => setFormData({ ...formData, consistency: e.target.value as any })}
+                    >
+                      <option value="firm">Firm</option>
+                      <option value="soft">Soft</option>
+                      <option value="half n half">Half n Half</option>
+                      <option value="diarrhea">Diarrhea</option>
+                    </Select>
+                  </FormControl>
+                )}
               </HStack>
 
-              <HStack spacing={4}>
-                <FormControl flex={1}>
-                  <FormLabel>Color</FormLabel>
-                  <Select
-                    value={formData.color}
-                    onChange={(e) => setFormData({ ...formData, color: e.target.value as any })}
-                  >
-                    <option value="yellow">Yellow</option>
-                    <option value="green">Green</option>
-                    <option value="brown">Brown</option>
-                    <option value="dark brown">Dark Brown</option>
-                    <option value="black">Black</option>
-                    <option value="other">Other</option>
-                  </Select>
-                </FormControl>
+              {formData.type !== 'pee' && (
+                <HStack spacing={4}>
+                  <FormControl flex={1}>
+                    <FormLabel>Color</FormLabel>
+                    <Select
+                      value={formData.color}
+                      onChange={(e) => setFormData({ ...formData, color: e.target.value as any })}
+                    >
+                      <option value="yellow">Yellow</option>
+                      <option value="green">Green</option>
+                      <option value="brown">Brown</option>
+                      <option value="dark brown">Dark Brown</option>
+                      <option value="black">Black</option>
+                      <option value="other">Other</option>
+                    </Select>
+                  </FormControl>
 
-                <FormControl>
-                  <FormLabel>&nbsp;</FormLabel>
-                  <Checkbox
-                    isChecked={formData.hasBlood}
-                    onChange={(e) => setFormData({ ...formData, hasBlood: e.target.checked })}
-                    colorScheme={formData.hasBlood ? 'red' : 'gray'}
-                  >
-                    <HStack spacing={1}>
-                      <Icon as={FaTint} color={formData.hasBlood ? 'red.500' : 'gray.400'} />
-                      <Text>Blood Present</Text>
-                    </HStack>
-                  </Checkbox>
-                </FormControl>
-              </HStack>
+                  <FormControl>
+                    <FormLabel>&nbsp;</FormLabel>
+                    <Checkbox
+                      isChecked={formData.hasBlood}
+                      onChange={(e) => setFormData({ ...formData, hasBlood: e.target.checked })}
+                      colorScheme={formData.hasBlood ? 'red' : 'gray'}
+                    >
+                      <HStack spacing={1}>
+                        <Icon as={FaTint} color={formData.hasBlood ? 'red.500' : 'gray.400'} />
+                        <Text>Blood Present</Text>
+                      </HStack>
+                    </Checkbox>
+                  </FormControl>
+                </HStack>
+              )}
 
               <FormControl>
                 <FormLabel>Photos (2-3 photos)</FormLabel>
