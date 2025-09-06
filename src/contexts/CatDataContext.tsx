@@ -37,7 +37,7 @@ export const useCatData = () => {
   return context;
 };
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://clever-generosity-production.up.railway.app/api';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
 // Convert snake_case from backend to camelCase for frontend
 const toCamelCase = (obj: any): any => {

@@ -1,12 +1,36 @@
 import express from 'express';
 import cors from 'cors';
 import { v4 as uuidv4 } from 'uuid';
-import { initSQLiteDB, getQuery, allQuery, runQuery } from './db/sqlite.js';
+import { initDatabase, getQuery, allQuery, runQuery } from './db/database.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-app.use(cors());
+// Configure CORS for production
+const corsOptions = {
+  origin: function (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) {
+    // Allow requests from Railway frontend or localhost for development
+    const allowedOrigins = [
+      'https://graceful-optimism-production.up.railway.app',
+      'http://localhost:5173',
+      'http://localhost:4173',
+      process.env.FRONTEND_URL
+    ].filter(Boolean);
+    
+    // Allow requests with no origin (like mobile apps or curl)
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      console.log('Blocked CORS request from:', origin);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+};
+
+app.use(cors(corsOptions));
 app.use(express.json({ limit: '10mb' }));
 
 // Profile routes
@@ -272,10 +296,11 @@ app.get('/api/health', (req, res) => {
 
 async function start() {
   try {
-    await initSQLiteDB();
+    await initDatabase();
     app.listen(PORT, () => {
       console.log(`Backend server running on http://localhost:${PORT}`);
       console.log(`API available at http://localhost:${PORT}/api`);
+      console.log(`Database: ${process.env.DATABASE_URL ? 'PostgreSQL (Railway)' : 'SQLite (Local)'}`);
     });
   } catch (error) {
     console.error('Failed to start server:', error);
