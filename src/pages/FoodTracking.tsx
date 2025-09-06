@@ -402,7 +402,13 @@ const FoodTracking = () => {
                           {entry.foodCategory}
                         </Badge>
                         <Badge colorScheme="green">
-                          {entry.amount}g
+                          {entry.unit === 'portions' 
+                            ? `${entry.amount * (entry.portionToGrams || 10)}g (${entry.amount} portions)`
+                            : entry.unit === 'cups'
+                            ? `${entry.amount * 120}g (${entry.amount} cups)`
+                            : entry.unit === 'pieces'
+                            ? `${entry.amount * 10}g (${entry.amount} pieces)`
+                            : `${entry.amount}g`}
                         </Badge>
                       </HStack>
                       <Text>

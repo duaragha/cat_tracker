@@ -96,11 +96,19 @@ const Calendar: React.FC = () => {
 
     // Add food events
     foodEntries.forEach((entry) => {
+      const displayAmount = entry.unit === 'portions' 
+        ? entry.amount * (entry.portionToGrams || 10)
+        : entry.unit === 'cups'
+        ? entry.amount * 120
+        : entry.unit === 'pieces'
+        ? entry.amount * 10
+        : entry.amount;
+      
       events.push({
         id: entry.id,
         date: entry.timestamp,
         category: 'food',
-        title: `${entry.foodCategory} - ${entry.amount}g`,
+        title: `${entry.foodCategory} - ${displayAmount}g`,
         description: `${entry.foodType}${entry.brand ? ` (${entry.brand})` : ''}`,
         data: entry,
         color: CATEGORY_COLORS.food.color,

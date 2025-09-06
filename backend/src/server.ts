@@ -64,7 +64,7 @@ app.delete('/api/profile/:id', async (req, res) => {
 
 app.post('/api/profile', async (req, res) => {
   try {
-    const { name, breed, birthDate, gotchaDate, weight, photoUrl } = req.body;
+    const { name, breed, birth_date, gotcha_date, weight, photo_url } = req.body;
     
     // Check if a profile already exists
     const existingProfile = await getQuery('SELECT * FROM cat_profiles ORDER BY created_at DESC LIMIT 1');
@@ -75,7 +75,7 @@ app.post('/api/profile', async (req, res) => {
         `UPDATE cat_profiles 
          SET name = ?, breed = ?, birth_date = ?, gotcha_date = ?, weight = ?, photo_url = ?, updated_at = CURRENT_TIMESTAMP
          WHERE id = ?`,
-        [name, breed, birthDate, gotchaDate, weight, photoUrl, existingProfile.id]
+        [name, breed, birth_date, gotcha_date, weight, photo_url, existingProfile.id]
       );
       const profile = await getQuery('SELECT * FROM cat_profiles WHERE id = ?', [existingProfile.id]);
       res.json(profile);
@@ -85,7 +85,7 @@ app.post('/api/profile', async (req, res) => {
       await runQuery(
         `INSERT INTO cat_profiles (id, name, breed, birth_date, gotcha_date, weight, photo_url)
          VALUES (?, ?, ?, ?, ?, ?, ?)`,
-        [id, name, breed, birthDate, gotchaDate, weight, photoUrl]
+        [id, name, breed, birth_date, gotcha_date, weight, photo_url]
       );
       const profile = await getQuery('SELECT * FROM cat_profiles WHERE id = ?', [id]);
       res.json(profile);

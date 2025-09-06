@@ -165,10 +165,22 @@ export const CatDataProvider: React.FC<{ children: ReactNode }> = ({ children })
 
   const setCatProfile = async (profile: CatProfile) => {
     try {
+      // Format dates properly to preserve local dates
+      const profileData = {
+        ...toSnakeCase(profile),
+        birth_date: profile.birthDate ? 
+          `${profile.birthDate.getFullYear()}-${String(profile.birthDate.getMonth() + 1).padStart(2, '0')}-${String(profile.birthDate.getDate()).padStart(2, '0')}` : 
+          null,
+        gotcha_date: profile.gotchaDate ? 
+          `${profile.gotchaDate.getFullYear()}-${String(profile.gotchaDate.getMonth() + 1).padStart(2, '0')}-${String(profile.gotchaDate.getDate()).padStart(2, '0')}` : 
+          null,
+        photo_url: profile.photoUrl || null
+      };
+      
       const res = await fetch(`${API_URL}/profile`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(toSnakeCase(profile))
+        body: JSON.stringify(profileData)
       });
       
       if (res.ok) {
@@ -270,13 +282,17 @@ export const CatDataProvider: React.FC<{ children: ReactNode }> = ({ children })
     if (!catProfile?.id) return;
     
     try {
+      // Format date as YYYY-MM-DD to preserve the local date
+      const localDate = entry.measurementDate;
+      const dateStr = `${localDate.getFullYear()}-${String(localDate.getMonth() + 1).padStart(2, '0')}-${String(localDate.getDate()).padStart(2, '0')}`;
+      
       const res = await fetch(`${API_URL}/weight`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...toSnakeCase(entry),
           catId: catProfile.id,
-          measurementDate: entry.measurementDate.toISOString()
+          measurementDate: dateStr
         })
       });
       
