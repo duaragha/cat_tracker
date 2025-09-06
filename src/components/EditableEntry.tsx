@@ -9,7 +9,6 @@ import {
   Select,
   Textarea,
   Button,
-  Badge,
   useColorModeValue,
   FormControl,
   Checkbox,
@@ -97,7 +96,7 @@ export const EditableEntry: React.FC<EditableEntryProps> = ({
             onChange={(e) => setEditedData({ ...editedData, [field.key]: e.target.value })}
             size="sm"
           >
-            {field.options?.map((option) => (
+            {field.options?.map((option: { value: string; label: string }) => (
               <option key={option.value} value={option.value}>
                 {option.label}
               </option>
