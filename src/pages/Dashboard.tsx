@@ -15,7 +15,8 @@ import {
   Icon,
   useColorModeValue,
   Button,
-  Flex
+  Flex,
+  Avatar
 } from '@chakra-ui/react';
 import { FaPaw, FaUtensils, FaBed, FaWeight, FaCamera, FaToilet } from 'react-icons/fa';
 import { useCatData } from '../contexts/CatDataContext';
@@ -45,8 +46,16 @@ const Dashboard = () => {
   );
   
   const todayFoodAmount = todayFood.reduce((total, entry) => {
-    const amount = entry.unit === 'grams' ? entry.amount : entry.amount * 100;
-    return total + amount;
+    const entryAmount = typeof entry.amount === 'string' ? parseFloat(entry.amount) : entry.amount;
+    const portionGrams = typeof entry.portionToGrams === 'string' ? parseFloat(entry.portionToGrams) : (entry.portionToGrams || 10);
+    
+    const amount = entry.unit === 'grams' ? entryAmount : 
+                  entry.unit === 'cups' ? entryAmount * 120 : // 1 cup ≈ 120g for dry food
+                  entry.unit === 'portions' ? entryAmount * portionGrams : // portions with conversion
+                  entryAmount * 10; // pieces default to 10g each
+    
+    const validAmount = isNaN(amount) ? 0 : amount;
+    return total + validAmount;
   }, 0);
   
   const todaySleep = sleepEntries.filter(entry => 
@@ -121,15 +130,22 @@ const Dashboard = () => {
         {/* Header */}
         <Box>
           <HStack justify="space-between" align="center">
-            <VStack align="start" spacing={1}>
-              <Heading size="xl">
-                <Icon as={FaPaw} mr={2} />
-                {catProfile.name}'s Dashboard
-              </Heading>
-              <Text color="gray.600">
-                {format(new Date(), 'EEEE, MMMM d, yyyy')}
-              </Text>
-            </VStack>
+            <HStack spacing={4}>
+              <Avatar
+                size="lg"
+                name={catProfile.name}
+                src={catProfile.photoUrl}
+                bg="blue.500"
+              />
+              <VStack align="start" spacing={1}>
+                <Heading size="xl">
+                  {catProfile.name}'s Dashboard
+                </Heading>
+                <Text color="gray.600">
+                  {format(new Date(), 'EEEE, MMMM d, yyyy')}
+                </Text>
+              </VStack>
+            </HStack>
             <Button
               leftIcon={<FaCamera />}
               colorScheme="teal"
