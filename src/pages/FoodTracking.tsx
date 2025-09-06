@@ -130,17 +130,22 @@ const FoodTracking = () => {
       let total = 0;
 
       entries.forEach(entry => {
-        const amount = entry.unit === 'grams' ? entry.amount : 
-                      entry.unit === 'cups' ? entry.amount * 120 : // 1 cup ≈ 120g for dry food
-                      entry.unit === 'portions' ? entry.amount * (entry.portionToGrams || 10) : // portions with conversion
-                      entry.amount * 10; // pieces default to 10g each
+        const entryAmount = typeof entry.amount === 'string' ? parseFloat(entry.amount) : entry.amount;
+        const portionGrams = typeof entry.portionToGrams === 'string' ? parseFloat(entry.portionToGrams) : (entry.portionToGrams || 10);
+        
+        const amount = entry.unit === 'grams' ? entryAmount : 
+                      entry.unit === 'cups' ? entryAmount * 120 : // 1 cup ≈ 120g for dry food
+                      entry.unit === 'portions' ? entryAmount * portionGrams : // portions with conversion
+                      entryAmount * 10; // pieces default to 10g each
+
+        const validAmount = isNaN(amount) ? 0 : amount;
 
         if (entry.foodCategory === 'Dry') {
-          dryTotal += amount;
+          dryTotal += validAmount;
         } else if (entry.foodCategory === 'Wet') {
-          wetTotal += amount;
+          wetTotal += validAmount;
         }
-        total += amount;
+        total += validAmount;
       });
 
       return { dryTotal, wetTotal, total };
