@@ -216,13 +216,13 @@ app.get('/api/weight/:catId', async (req, res) => {
 
 app.post('/api/weight', async (req, res) => {
   try {
-    const { catId, weight, measurementDate, photos, notes } = req.body;
+    const { catId, weight, measurement_date, photos, notes } = req.body;
     const id = uuidv4();
     await runQuery(
       `INSERT INTO weight_entries 
        (id, cat_id, weight, measurement_date, photos, notes)
        VALUES (?, ?, ?, ?, ?, ?)`,
-      [id, catId, weight, measurementDate, JSON.stringify(photos || []), notes]
+      [id, catId, weight, measurement_date, JSON.stringify(photos || []), notes]
     );
     const entry = await getQuery('SELECT * FROM weight_entries WHERE id = ?', [id]);
     res.json({ ...entry, photos: entry.photos ? JSON.parse(entry.photos) : [] });

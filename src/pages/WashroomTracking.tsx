@@ -49,12 +49,13 @@ const WashroomTracking = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Only include consistency, color, and blood fields for poop-related entries
     addWashroomEntry({
       timestamp: new Date(formData.timestamp),
       type: formData.type,
-      consistency: formData.consistency,
-      hasBlood: formData.hasBlood,
-      color: formData.color,
+      consistency: formData.type === 'pee' ? undefined : formData.consistency,
+      hasBlood: formData.type === 'pee' ? false : formData.hasBlood,
+      color: formData.type === 'pee' ? undefined : formData.color,
       photos: formData.photos,
       notes: formData.notes
     });

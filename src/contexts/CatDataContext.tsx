@@ -292,7 +292,7 @@ export const CatDataProvider: React.FC<{ children: ReactNode }> = ({ children })
         body: JSON.stringify({
           ...toSnakeCase(entry),
           catId: catProfile.id,
-          measurementDate: dateStr
+          measurement_date: dateStr  // Use snake_case for backend
         })
       });
       
