@@ -410,7 +410,7 @@ app.get('/api/fix-database', async (req, res) => {
     console.error('Database fix failed:', error);
     res.status(500).json({ 
       success: false, 
-      error: error.message 
+      error: error instanceof Error ? error.message : 'Unknown error occurred' 
     });
   }
 });
