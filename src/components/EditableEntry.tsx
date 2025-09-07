@@ -20,6 +20,7 @@ import {
 } from '@chakra-ui/react';
 import { FaEdit, FaSave, FaTimes, FaTrash } from 'react-icons/fa';
 import { format } from 'date-fns';
+import { PhotoUpload } from './PhotoUpload';
 
 interface EditableEntryProps {
   entry: any;
@@ -28,11 +29,12 @@ interface EditableEntryProps {
   fields: Array<{
     key: string;
     label: string;
-    type: 'text' | 'number' | 'select' | 'textarea' | 'date' | 'datetime' | 'checkbox' | 'image';
+    type: 'text' | 'number' | 'select' | 'textarea' | 'date' | 'datetime' | 'checkbox' | 'image' | 'photos';
     options?: Array<{ value: string; label: string }>;
     min?: number;
     max?: number;
     step?: number;
+    maxFiles?: number;
   }>;
   renderDisplay: (entry: any) => React.ReactNode;
 }
@@ -152,6 +154,15 @@ export const EditableEntry: React.FC<EditableEntryProps> = ({
             onChange={(e) => setEditedData({ ...editedData, [field.key]: e.target.value })}
             placeholder="Enter image URL"
             size="sm"
+          />
+        );
+      
+      case 'photos':
+        return (
+          <PhotoUpload
+            maxFiles={field.maxFiles || 3}
+            existingPhotos={value || []}
+            onPhotosChange={(photos) => setEditedData({ ...editedData, [field.key]: photos })}
           />
         );
       

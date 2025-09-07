@@ -356,9 +356,10 @@ const WashroomTracking = () => {
                       type: 'checkbox'
                     },
                     {
-                      key: 'photoUrl',
-                      label: 'Photo URL',
-                      type: 'image'
+                      key: 'photos',
+                      label: 'Photos',
+                      type: 'photos',
+                      maxFiles: 2
                     },
                     {
                       key: 'notes',
@@ -407,11 +408,6 @@ const WashroomTracking = () => {
                       {(entry.photos && entry.photos.length > 0) && (
                         <Text fontSize="xs" color="gray.500">
                           📷 {entry.photos.length} photo{entry.photos.length > 1 ? 's' : ''}
-                        </Text>
-                      )}
-                      {entry.photoUrl && (
-                        <Text fontSize="xs" color="gray.500">
-                          🖼️ Has photo
                         </Text>
                       )}
                     </VStack>

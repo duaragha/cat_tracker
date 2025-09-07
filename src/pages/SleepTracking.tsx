@@ -25,6 +25,7 @@ import { useCatData } from '../contexts/CatDataContext';
 import { format, isToday, startOfWeek, endOfWeek, isWithinInterval } from 'date-fns';
 import type { SleepFormData } from '../types';
 import { EditableEntry } from '../components/EditableEntry';
+import { PhotoUpload } from '../components/PhotoUpload';
 
 const SleepTracking = () => {
   const { sleepEntries, addSleepEntry, deleteEntry, updateEntry } = useCatData();
@@ -38,7 +39,7 @@ const SleepTracking = () => {
     quality: 'normal',
     location: 'Bed',
     notes: '',
-    photoUrl: ''
+    photos: []
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -63,7 +64,7 @@ const SleepTracking = () => {
       quality: formData.quality,
       location: formData.location,
       notes: formData.notes,
-      photoUrl: formData.photoUrl
+      photos: formData.photos
     });
 
     toast({
@@ -80,7 +81,7 @@ const SleepTracking = () => {
       quality: 'normal',
       location: 'Bed',
       notes: '',
-      photoUrl: ''
+      photos: []
     });
   };
 
@@ -238,12 +239,11 @@ const SleepTracking = () => {
               </FormControl>
 
               <FormControl>
-                <FormLabel>Photo URL (optional)</FormLabel>
-                <Input
-                  type="url"
-                  value={formData.photoUrl}
-                  onChange={(e) => setFormData({ ...formData, photoUrl: e.target.value })}
-                  placeholder="Enter image URL"
+                <FormLabel>Photos (optional)</FormLabel>
+                <PhotoUpload
+                  maxFiles={2}
+                  existingPhotos={formData.photos}
+                  onPhotosChange={(photos) => setFormData({ ...formData, photos })}
                 />
               </FormControl>
 
@@ -312,9 +312,10 @@ const SleepTracking = () => {
                       type: 'text'
                     },
                     {
-                      key: 'photoUrl',
-                      label: 'Photo URL',
-                      type: 'image'
+                      key: 'photos',
+                      label: 'Photos',
+                      type: 'photos',
+                      maxFiles: 2
                     },
                     {
                       key: 'notes',
@@ -348,9 +349,9 @@ const SleepTracking = () => {
                           {entry.notes}
                         </Text>
                       )}
-                      {entry.photoUrl && (
+                      {entry.photos && entry.photos.length > 0 && (
                         <Text fontSize="xs" color="gray.500">
-                          🖼️ Has photo
+                          📷 {entry.photos.length} photo{entry.photos.length > 1 ? 's' : ''}
                         </Text>
                       )}
                     </VStack>

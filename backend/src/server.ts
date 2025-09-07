@@ -132,7 +132,7 @@ app.post('/api/washroom', async (req, res) => {
 app.put('/api/washroom/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { timestamp, type, consistency, hasBlood, has_blood, color, photos, notes, photoUrl } = req.body;
+    const { timestamp, type, consistency, hasBlood, has_blood, color, photos, notes } = req.body;
     const blood = hasBlood !== undefined ? hasBlood : has_blood;
     
     // Build dynamic UPDATE query based on provided fields
@@ -146,7 +146,6 @@ app.put('/api/washroom/:id', async (req, res) => {
     if (color !== undefined) { updates.push('color = ?'); values.push(color); }
     if (photos !== undefined) { updates.push('photos = ?'); values.push(JSON.stringify(photos || [])); }
     if (notes !== undefined) { updates.push('notes = ?'); values.push(notes); }
-    if (photoUrl !== undefined) { updates.push('photo_url = ?'); values.push(photoUrl); }
     
     if (updates.length > 0) {
       values.push(id);
@@ -208,8 +207,7 @@ app.put('/api/food/:id', async (req, res) => {
       amount, 
       unit, 
       portionToGrams, portion_to_grams, 
-      notes,
-      photoUrl 
+      notes
     } = req.body;
     
     // Handle both camelCase and snake_case
@@ -229,7 +227,6 @@ app.put('/api/food/:id', async (req, res) => {
     if (unit !== undefined) { updates.push('unit = ?'); values.push(unit); }
     if (actualPortionToGrams !== undefined) { updates.push('portion_to_grams = ?'); values.push(actualPortionToGrams); }
     if (notes !== undefined) { updates.push('notes = ?'); values.push(notes); }
-    if (photoUrl !== undefined) { updates.push('photo_url = ?'); values.push(photoUrl); }
     
     if (updates.length > 0) {
       values.push(id);
@@ -255,7 +252,7 @@ app.get('/api/sleep/:catId', async (req, res) => {
       'SELECT * FROM sleep_entries WHERE cat_id = ? ORDER BY start_time DESC',
       [catId]
     );
-    res.json(entries);
+    res.json(entries.map(e => ({ ...e, photos: e.photos ? JSON.parse(e.photos) : [] })));
   } catch (error) {
     console.error('Error fetching sleep entries:', error);
     res.status(500).json({ error: 'Failed to fetch entries' });
@@ -264,7 +261,7 @@ app.get('/api/sleep/:catId', async (req, res) => {
 
 app.post('/api/sleep', async (req, res) => {
   try {
-    const { catId, startTime, endTime, quality, location, customLocation, notes } = req.body;
+    const { catId, startTime, endTime, quality, location, customLocation, notes, photos } = req.body;
     const id = uuidv4();
     const start = new Date(startTime);
     const end = new Date(endTime);
@@ -272,12 +269,12 @@ app.post('/api/sleep', async (req, res) => {
     
     await runQuery(
       `INSERT INTO sleep_entries 
-       (id, cat_id, start_time, end_time, duration, quality, location, custom_location, notes)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [id, catId, startTime, endTime, duration, quality, location, customLocation, notes]
+       (id, cat_id, start_time, end_time, duration, quality, location, custom_location, notes, photos)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [id, catId, startTime, endTime, duration, quality, location, customLocation, notes, JSON.stringify(photos || [])]
     );
     const entry = await getQuery('SELECT * FROM sleep_entries WHERE id = ?', [id]);
-    res.json(entry);
+    res.json({ ...entry, photos: entry.photos ? JSON.parse(entry.photos) : [] });
   } catch (error) {
     console.error('Error creating sleep entry:', error);
     res.status(500).json({ error: 'Failed to create entry' });
@@ -287,7 +284,7 @@ app.post('/api/sleep', async (req, res) => {
 app.put('/api/sleep/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { startTime, start_time, endTime, end_time, quality, location, custom_location, customLocation, notes, photoUrl } = req.body;
+    const { startTime, start_time, endTime, end_time, quality, location, custom_location, customLocation, notes, photos } = req.body;
     
     // Handle both camelCase and snake_case
     const actualStartTime = startTime || start_time;
@@ -310,7 +307,7 @@ app.put('/api/sleep/:id', async (req, res) => {
     if (location !== undefined) { updates.push('location = ?'); values.push(location); }
     if (actualCustomLocation !== undefined) { updates.push('custom_location = ?'); values.push(actualCustomLocation); }
     if (notes !== undefined) { updates.push('notes = ?'); values.push(notes); }
-    if (photoUrl !== undefined) { updates.push('photo_url = ?'); values.push(photoUrl); }
+    if (photos !== undefined) { updates.push('photos = ?'); values.push(JSON.stringify(photos || [])); }
     
     if (updates.length > 0) {
       values.push(id);
@@ -321,7 +318,7 @@ app.put('/api/sleep/:id', async (req, res) => {
     }
     
     const entry = await getQuery('SELECT * FROM sleep_entries WHERE id = ?', [id]);
-    res.json(entry);
+    res.json({ ...entry, photos: entry.photos ? JSON.parse(entry.photos) : [] });
   } catch (error) {
     console.error('Error updating sleep entry:', error);
     res.status(500).json({ error: 'Failed to update entry' });
@@ -364,7 +361,7 @@ app.post('/api/weight', async (req, res) => {
 app.put('/api/weight/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { weight, measurementDate, measurement_date, photos, notes, photoUrl } = req.body;
+    const { weight, measurementDate, measurement_date, photos, notes } = req.body;
     
     // Handle both camelCase and snake_case
     const actualMeasurementDate = measurementDate || measurement_date;
@@ -377,7 +374,6 @@ app.put('/api/weight/:id', async (req, res) => {
     if (actualMeasurementDate !== undefined) { updates.push('measurement_date = ?'); values.push(actualMeasurementDate); }
     if (photos !== undefined) { updates.push('photos = ?'); values.push(JSON.stringify(photos || [])); }
     if (notes !== undefined) { updates.push('notes = ?'); values.push(notes); }
-    if (photoUrl !== undefined) { updates.push('photo_url = ?'); values.push(photoUrl); }
     
     if (updates.length > 0) {
       values.push(id);
