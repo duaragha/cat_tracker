@@ -270,31 +270,41 @@ export const CatDataProvider: React.FC<{ children: ReactNode }> = ({ children })
   };
 
   const addSleepEntry = async (entry: Omit<SleepEntry, 'id' | 'catId' | 'createdAt' | 'duration'>) => {
-    if (!catProfile?.id) return;
+    if (!catProfile?.id) {
+      console.error('No cat profile ID available');
+      return;
+    }
     
     try {
+      const payload = {
+        catId: catProfile.id,
+        startTime: entry.startTime.toISOString(),
+        endTime: entry.endTime.toISOString(),
+        quality: entry.quality,
+        location: entry.location,
+        customLocation: entry.customLocation,
+        photos: entry.photos || [],
+        notes: entry.notes
+      };
+      
+      console.log('Sending sleep entry:', payload);
+      
       const res = await fetch(`${API_URL}/sleep`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          catId: catProfile.id,
-          startTime: entry.startTime.toISOString(),
-          endTime: entry.endTime.toISOString(),
-          quality: entry.quality,
-          location: entry.location,
-          customLocation: entry.customLocation,
-          photos: entry.photos,
-          notes: entry.notes
-        })
+        body: JSON.stringify(payload)
       });
       
       if (res.ok) {
         const data = await res.json();
+        console.log('Sleep entry created:', data);
         const newEntry = toCamelCase(data);
         newEntry.startTime = new Date(data.start_time);
         newEntry.endTime = new Date(data.end_time);
         newEntry.createdAt = new Date(data.created_at);
         setSleepEntries(prev => [newEntry, ...prev]);
+      } else {
+        console.error('Failed to create sleep entry:', res.status, await res.text());
       }
     } catch (error) {
       console.error('Error adding sleep entry:', error);
