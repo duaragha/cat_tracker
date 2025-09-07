@@ -282,6 +282,7 @@ export const CatDataProvider: React.FC<{ children: ReactNode }> = ({ children })
           quality: entry.quality,
           location: entry.location,
           customLocation: entry.customLocation,
+          photos: entry.photos,
           notes: entry.notes
         })
       });

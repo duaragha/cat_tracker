@@ -75,6 +75,7 @@ export function initSQLiteDB() {
           quality TEXT,
           location TEXT NOT NULL,
           custom_location TEXT,
+          photos TEXT,
           notes TEXT,
           created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
           FOREIGN KEY (cat_id) REFERENCES cat_profiles(id)
