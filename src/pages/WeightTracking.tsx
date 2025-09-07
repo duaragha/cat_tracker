@@ -312,6 +312,11 @@ const WeightTracking = () => {
                         step: 0.1
                       },
                       {
+                        key: 'photoUrl',
+                        label: 'Photo URL',
+                        type: 'image'
+                      },
+                      {
                         key: 'notes',
                         label: 'Notes',
                         type: 'textarea'
@@ -354,6 +359,11 @@ const WeightTracking = () => {
                               />
                             ))}
                           </SimpleGrid>
+                        )}
+                        {entry.photoUrl && (
+                          <Text fontSize="xs" color="gray.500">
+                            🖼️ Has photo
+                          </Text>
                         )}
                       </VStack>
                     )}

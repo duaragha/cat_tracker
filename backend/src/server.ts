@@ -132,13 +132,30 @@ app.post('/api/washroom', async (req, res) => {
 app.put('/api/washroom/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { timestamp, type, consistency, has_blood, color, photos, notes } = req.body;
-    await runQuery(
-      `UPDATE washroom_entries 
-       SET timestamp = ?, type = ?, consistency = ?, has_blood = ?, color = ?, photos = ?, notes = ?
-       WHERE id = ?`,
-      [timestamp, type, consistency, has_blood ? 1 : 0, color, JSON.stringify(photos || []), notes, id]
-    );
+    const { timestamp, type, consistency, hasBlood, has_blood, color, photos, notes, photoUrl } = req.body;
+    const blood = hasBlood !== undefined ? hasBlood : has_blood;
+    
+    // Build dynamic UPDATE query based on provided fields
+    const updates = [];
+    const values = [];
+    
+    if (timestamp !== undefined) { updates.push('timestamp = ?'); values.push(timestamp); }
+    if (type !== undefined) { updates.push('type = ?'); values.push(type); }
+    if (consistency !== undefined) { updates.push('consistency = ?'); values.push(consistency); }
+    if (blood !== undefined) { updates.push('has_blood = ?'); values.push(blood ? 1 : 0); }
+    if (color !== undefined) { updates.push('color = ?'); values.push(color); }
+    if (photos !== undefined) { updates.push('photos = ?'); values.push(JSON.stringify(photos || [])); }
+    if (notes !== undefined) { updates.push('notes = ?'); values.push(notes); }
+    if (photoUrl !== undefined) { updates.push('photo_url = ?'); values.push(photoUrl); }
+    
+    if (updates.length > 0) {
+      values.push(id);
+      await runQuery(
+        `UPDATE washroom_entries SET ${updates.join(', ')} WHERE id = ?`,
+        values
+      );
+    }
+    
     const entry = await getQuery('SELECT * FROM washroom_entries WHERE id = ?', [id]);
     res.json({ ...entry, photos: entry.photos ? JSON.parse(entry.photos) : [], has_blood: !!entry.has_blood });
   } catch (error) {
@@ -183,13 +200,45 @@ app.post('/api/food', async (req, res) => {
 app.put('/api/food/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { timestamp, food_category, food_type, brand, amount, unit, portion_to_grams, notes } = req.body;
-    await runQuery(
-      `UPDATE food_entries 
-       SET timestamp = ?, food_category = ?, food_type = ?, brand = ?, amount = ?, unit = ?, portion_to_grams = ?, notes = ?
-       WHERE id = ?`,
-      [timestamp, food_category, food_type, brand, amount, unit, portion_to_grams, notes, id]
-    );
+    const { 
+      timestamp, 
+      foodCategory, food_category, 
+      foodType, food_type, 
+      brand, 
+      amount, 
+      unit, 
+      portionToGrams, portion_to_grams, 
+      notes,
+      photoUrl 
+    } = req.body;
+    
+    // Handle both camelCase and snake_case
+    const actualFoodCategory = foodCategory || food_category;
+    const actualFoodType = foodType || food_type;
+    const actualPortionToGrams = portionToGrams || portion_to_grams;
+    
+    // Build dynamic UPDATE query
+    const updates = [];
+    const values = [];
+    
+    if (timestamp !== undefined) { updates.push('timestamp = ?'); values.push(timestamp); }
+    if (actualFoodCategory !== undefined) { updates.push('food_category = ?'); values.push(actualFoodCategory); }
+    if (actualFoodType !== undefined) { updates.push('food_type = ?'); values.push(actualFoodType); }
+    if (brand !== undefined) { updates.push('brand = ?'); values.push(brand); }
+    if (amount !== undefined) { updates.push('amount = ?'); values.push(amount); }
+    if (unit !== undefined) { updates.push('unit = ?'); values.push(unit); }
+    if (actualPortionToGrams !== undefined) { updates.push('portion_to_grams = ?'); values.push(actualPortionToGrams); }
+    if (notes !== undefined) { updates.push('notes = ?'); values.push(notes); }
+    if (photoUrl !== undefined) { updates.push('photo_url = ?'); values.push(photoUrl); }
+    
+    if (updates.length > 0) {
+      values.push(id);
+      await runQuery(
+        `UPDATE food_entries SET ${updates.join(', ')} WHERE id = ?`,
+        values
+      );
+    }
+    
     const entry = await getQuery('SELECT * FROM food_entries WHERE id = ?', [id]);
     res.json(entry);
   } catch (error) {
@@ -238,17 +287,39 @@ app.post('/api/sleep', async (req, res) => {
 app.put('/api/sleep/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { start_time, end_time, quality, location, custom_location, notes } = req.body;
-    const start = new Date(start_time);
-    const end = new Date(end_time);
-    const duration = Math.floor((end.getTime() - start.getTime()) / 60000);
+    const { startTime, start_time, endTime, end_time, quality, location, custom_location, customLocation, notes, photoUrl } = req.body;
     
-    await runQuery(
-      `UPDATE sleep_entries 
-       SET start_time = ?, end_time = ?, duration = ?, quality = ?, location = ?, custom_location = ?, notes = ?
-       WHERE id = ?`,
-      [start_time, end_time, duration, quality, location, custom_location, notes, id]
-    );
+    // Handle both camelCase and snake_case
+    const actualStartTime = startTime || start_time;
+    const actualEndTime = endTime || end_time;
+    const actualCustomLocation = customLocation || custom_location;
+    
+    // Build dynamic UPDATE query
+    const updates = [];
+    const values = [];
+    
+    if (actualStartTime && actualEndTime) {
+      const start = new Date(actualStartTime);
+      const end = new Date(actualEndTime);
+      const duration = Math.floor((end.getTime() - start.getTime()) / 60000);
+      updates.push('start_time = ?', 'end_time = ?', 'duration = ?');
+      values.push(actualStartTime, actualEndTime, duration);
+    }
+    
+    if (quality !== undefined) { updates.push('quality = ?'); values.push(quality); }
+    if (location !== undefined) { updates.push('location = ?'); values.push(location); }
+    if (actualCustomLocation !== undefined) { updates.push('custom_location = ?'); values.push(actualCustomLocation); }
+    if (notes !== undefined) { updates.push('notes = ?'); values.push(notes); }
+    if (photoUrl !== undefined) { updates.push('photo_url = ?'); values.push(photoUrl); }
+    
+    if (updates.length > 0) {
+      values.push(id);
+      await runQuery(
+        `UPDATE sleep_entries SET ${updates.join(', ')} WHERE id = ?`,
+        values
+      );
+    }
+    
     const entry = await getQuery('SELECT * FROM sleep_entries WHERE id = ?', [id]);
     res.json(entry);
   } catch (error) {
@@ -293,13 +364,29 @@ app.post('/api/weight', async (req, res) => {
 app.put('/api/weight/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { weight, measurement_date, photos, notes } = req.body;
-    await runQuery(
-      `UPDATE weight_entries 
-       SET weight = ?, measurement_date = ?, photos = ?, notes = ?
-       WHERE id = ?`,
-      [weight, measurement_date, JSON.stringify(photos || []), notes, id]
-    );
+    const { weight, measurementDate, measurement_date, photos, notes, photoUrl } = req.body;
+    
+    // Handle both camelCase and snake_case
+    const actualMeasurementDate = measurementDate || measurement_date;
+    
+    // Build dynamic UPDATE query
+    const updates = [];
+    const values = [];
+    
+    if (weight !== undefined) { updates.push('weight = ?'); values.push(weight); }
+    if (actualMeasurementDate !== undefined) { updates.push('measurement_date = ?'); values.push(actualMeasurementDate); }
+    if (photos !== undefined) { updates.push('photos = ?'); values.push(JSON.stringify(photos || [])); }
+    if (notes !== undefined) { updates.push('notes = ?'); values.push(notes); }
+    if (photoUrl !== undefined) { updates.push('photo_url = ?'); values.push(photoUrl); }
+    
+    if (updates.length > 0) {
+      values.push(id);
+      await runQuery(
+        `UPDATE weight_entries SET ${updates.join(', ')} WHERE id = ?`,
+        values
+      );
+    }
+    
     const entry = await getQuery('SELECT * FROM weight_entries WHERE id = ?', [id]);
     res.json({ ...entry, photos: entry.photos ? JSON.parse(entry.photos) : [] });
   } catch (error) {

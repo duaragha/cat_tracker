@@ -28,7 +28,7 @@ interface EditableEntryProps {
   fields: Array<{
     key: string;
     label: string;
-    type: 'text' | 'number' | 'select' | 'textarea' | 'date' | 'datetime' | 'checkbox';
+    type: 'text' | 'number' | 'select' | 'textarea' | 'date' | 'datetime' | 'checkbox' | 'image';
     options?: Array<{ value: string; label: string }>;
     min?: number;
     max?: number;
@@ -142,6 +142,17 @@ export const EditableEntry: React.FC<EditableEntryProps> = ({
           >
             {field.label}
           </Checkbox>
+        );
+      
+      case 'image':
+        return (
+          <Input
+            type="url"
+            value={value || ''}
+            onChange={(e) => setEditedData({ ...editedData, [field.key]: e.target.value })}
+            placeholder="Enter image URL"
+            size="sm"
+          />
         );
       
       default:

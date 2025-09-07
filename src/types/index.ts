@@ -47,6 +47,7 @@ export interface SleepEntry {
   location: 'Cat Bed' | 'Bed' | 'Cat Tree' | 'Couch' | 'Floor' | 'Window' | 'Other';
   customLocation?: string; // if location is 'Other'
   notes?: string;
+  photoUrl?: string;
   createdAt: Date;
 }
 
@@ -57,6 +58,7 @@ export interface WeightEntry {
   measurementDate: Date;
   photos?: string[]; // photos of cat and scale
   notes?: string;
+  photoUrl?: string;
   createdAt: Date;
 }
 
@@ -110,6 +112,7 @@ export interface SleepFormData {
   location: 'Cat Bed' | 'Bed' | 'Cat Tree' | 'Couch' | 'Floor' | 'Window' | 'Other';
   customLocation?: string;
   notes?: string;
+  photoUrl?: string;
 }
 
 export interface WeightFormData {

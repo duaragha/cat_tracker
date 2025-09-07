@@ -11,7 +11,6 @@ import {
   Select,
   Textarea,
   useToast,
-  IconButton,
   Text,
   Badge,
   Stat,
@@ -23,15 +22,16 @@ import {
   Checkbox,
   Icon
 } from '@chakra-ui/react';
-import { FaToilet, FaPlus, FaTrash, FaTint } from 'react-icons/fa';
+import { FaToilet, FaPlus, FaTint } from 'react-icons/fa';
 import { useState } from 'react';
 import { useCatData } from '../contexts/CatDataContext';
 import { format, isToday, startOfWeek, endOfWeek, isWithinInterval } from 'date-fns';
 import type { WashroomFormData } from '../types';
 import { PhotoUpload } from '../components/PhotoUpload';
+import { EditableEntry } from '../components/EditableEntry';
 
 const WashroomTracking = () => {
-  const { washroomEntries, addWashroomEntry, deleteEntry } = useCatData();
+  const { washroomEntries, addWashroomEntry, deleteEntry, updateEntry } = useCatData();
   const toast = useToast();
   const bgColor = useColorModeValue('white', 'gray.800');
   const borderColor = useColorModeValue('gray.200', 'gray.700');
@@ -297,14 +297,76 @@ const WashroomTracking = () => {
               </Text>
             ) : (
               washroomEntries.slice(0, 10).map((entry) => (
-                <Box
+                <EditableEntry
                   key={entry.id}
-                  p={3}
-                  borderWidth={1}
-                  borderColor={borderColor}
-                  borderRadius="md"
-                >
-                  <HStack justify="space-between">
+                  entry={entry}
+                  onSave={(updatedEntry) => {
+                    updateEntry('washroom', entry.id, updatedEntry);
+                    toast({
+                      title: 'Entry updated',
+                      status: 'success',
+                      duration: 2000,
+                      isClosable: true,
+                    });
+                  }}
+                  onDelete={handleDelete}
+                  fields={[
+                    {
+                      key: 'timestamp',
+                      label: 'Date & Time',
+                      type: 'datetime'
+                    },
+                    {
+                      key: 'type',
+                      label: 'Type',
+                      type: 'select',
+                      options: [
+                        { value: 'pee', label: 'Pee' },
+                        { value: 'pooper', label: 'Pooper' },
+                        { value: 'both', label: 'Both' }
+                      ]
+                    },
+                    {
+                      key: 'consistency',
+                      label: 'Consistency',
+                      type: 'select',
+                      options: [
+                        { value: 'firm', label: 'Firm' },
+                        { value: 'soft', label: 'Soft' },
+                        { value: 'half n half', label: 'Half n Half' },
+                        { value: 'diarrhea', label: 'Diarrhea' }
+                      ]
+                    },
+                    {
+                      key: 'color',
+                      label: 'Color',
+                      type: 'select',
+                      options: [
+                        { value: 'yellow', label: 'Yellow' },
+                        { value: 'green', label: 'Green' },
+                        { value: 'brown', label: 'Brown' },
+                        { value: 'dark brown', label: 'Dark Brown' },
+                        { value: 'black', label: 'Black' },
+                        { value: 'other', label: 'Other' }
+                      ]
+                    },
+                    {
+                      key: 'hasBlood',
+                      label: 'Blood Present',
+                      type: 'checkbox'
+                    },
+                    {
+                      key: 'photoUrl',
+                      label: 'Photo URL',
+                      type: 'image'
+                    },
+                    {
+                      key: 'notes',
+                      label: 'Notes',
+                      type: 'textarea'
+                    }
+                  ]}
+                  renderDisplay={(entry) => (
                     <VStack align="start" spacing={1}>
                       <HStack>
                         <Text fontWeight="bold">
@@ -342,24 +404,19 @@ const WashroomTracking = () => {
                           {entry.notes}
                         </Text>
                       )}
-                      {entry.photos && entry.photos.length > 0 && (
-                        <HStack spacing={1}>
-                          <Text fontSize="xs" color="gray.500">
-                            📷 {entry.photos.length} photo{entry.photos.length > 1 ? 's' : ''}
-                          </Text>
-                        </HStack>
+                      {(entry.photos && entry.photos.length > 0) && (
+                        <Text fontSize="xs" color="gray.500">
+                          📷 {entry.photos.length} photo{entry.photos.length > 1 ? 's' : ''}
+                        </Text>
+                      )}
+                      {entry.photoUrl && (
+                        <Text fontSize="xs" color="gray.500">
+                          🖼️ Has photo
+                        </Text>
                       )}
                     </VStack>
-                    <IconButton
-                      icon={<FaTrash />}
-                      aria-label="Delete entry"
-                      size="sm"
-                      variant="ghost"
-                      colorScheme="red"
-                      onClick={() => handleDelete(entry.id)}
-                    />
-                  </HStack>
-                </Box>
+                  )}
+                />
               ))
             )}
           </VStack>

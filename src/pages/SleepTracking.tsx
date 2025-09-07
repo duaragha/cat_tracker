@@ -1,5 +1,4 @@
 import {
-  Box,
   VStack,
   HStack,
   Heading,
@@ -12,7 +11,6 @@ import {
   Select,
   Textarea,
   useToast,
-  IconButton,
   Text,
   Badge,
   Stat,
@@ -21,14 +19,15 @@ import {
   Grid,
   useColorModeValue
 } from '@chakra-ui/react';
-import { FaBed, FaPlus, FaTrash, FaMoon } from 'react-icons/fa';
+import { FaBed, FaPlus, FaMoon } from 'react-icons/fa';
 import { useState } from 'react';
 import { useCatData } from '../contexts/CatDataContext';
 import { format, isToday, startOfWeek, endOfWeek, isWithinInterval } from 'date-fns';
 import type { SleepFormData } from '../types';
+import { EditableEntry } from '../components/EditableEntry';
 
 const SleepTracking = () => {
-  const { sleepEntries, addSleepEntry, deleteEntry } = useCatData();
+  const { sleepEntries, addSleepEntry, deleteEntry, updateEntry } = useCatData();
   const toast = useToast();
   const bgColor = useColorModeValue('white', 'gray.800');
   const borderColor = useColorModeValue('gray.200', 'gray.700');
@@ -38,7 +37,8 @@ const SleepTracking = () => {
     endTime: format(new Date(), "yyyy-MM-dd'T'HH:mm"),
     quality: 'normal',
     location: 'Bed',
-    notes: ''
+    notes: '',
+    photoUrl: ''
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -62,7 +62,8 @@ const SleepTracking = () => {
       endTime,
       quality: formData.quality,
       location: formData.location,
-      notes: formData.notes
+      notes: formData.notes,
+      photoUrl: formData.photoUrl
     });
 
     toast({
@@ -78,7 +79,8 @@ const SleepTracking = () => {
       endTime: format(new Date(), "yyyy-MM-dd'T'HH:mm"),
       quality: 'normal',
       location: 'Bed',
-      notes: ''
+      notes: '',
+      photoUrl: ''
     });
   };
 
@@ -235,6 +237,16 @@ const SleepTracking = () => {
                 />
               </FormControl>
 
+              <FormControl>
+                <FormLabel>Photo URL (optional)</FormLabel>
+                <Input
+                  type="url"
+                  value={formData.photoUrl}
+                  onChange={(e) => setFormData({ ...formData, photoUrl: e.target.value })}
+                  placeholder="Enter image URL"
+                />
+              </FormControl>
+
               <Button
                 type="submit"
                 colorScheme="purple"
@@ -259,14 +271,58 @@ const SleepTracking = () => {
               </Text>
             ) : (
               sleepEntries.slice(0, 10).map((entry) => (
-                <Box
+                <EditableEntry
                   key={entry.id}
-                  p={3}
-                  borderWidth={1}
-                  borderColor={borderColor}
-                  borderRadius="md"
-                >
-                  <HStack justify="space-between">
+                  entry={entry}
+                  onSave={(updatedEntry) => {
+                    updateEntry('sleep', entry.id, updatedEntry);
+                    toast({
+                      title: 'Sleep session updated',
+                      status: 'success',
+                      duration: 2000,
+                      isClosable: true,
+                    });
+                  }}
+                  onDelete={handleDelete}
+                  fields={[
+                    {
+                      key: 'startTime',
+                      label: 'Start Time',
+                      type: 'datetime'
+                    },
+                    {
+                      key: 'endTime',
+                      label: 'End Time',
+                      type: 'datetime'
+                    },
+                    {
+                      key: 'quality',
+                      label: 'Quality',
+                      type: 'select',
+                      options: [
+                        { value: 'deep', label: 'Deep' },
+                        { value: 'normal', label: 'Normal' },
+                        { value: 'restless', label: 'Restless' },
+                        { value: 'interrupted', label: 'Interrupted' }
+                      ]
+                    },
+                    {
+                      key: 'location',
+                      label: 'Location',
+                      type: 'text'
+                    },
+                    {
+                      key: 'photoUrl',
+                      label: 'Photo URL',
+                      type: 'image'
+                    },
+                    {
+                      key: 'notes',
+                      label: 'Notes',
+                      type: 'textarea'
+                    }
+                  ]}
+                  renderDisplay={(entry) => (
                     <VStack align="start" spacing={1}>
                       <HStack>
                         <FaMoon color="purple" />
@@ -292,17 +348,14 @@ const SleepTracking = () => {
                           {entry.notes}
                         </Text>
                       )}
+                      {entry.photoUrl && (
+                        <Text fontSize="xs" color="gray.500">
+                          🖼️ Has photo
+                        </Text>
+                      )}
                     </VStack>
-                    <IconButton
-                      icon={<FaTrash />}
-                      aria-label="Delete entry"
-                      size="sm"
-                      variant="ghost"
-                      colorScheme="red"
-                      onClick={() => handleDelete(entry.id)}
-                    />
-                  </HStack>
-                </Box>
+                  )}
+                />
               ))
             )}
           </VStack>
