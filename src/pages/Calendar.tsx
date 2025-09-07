@@ -28,6 +28,7 @@ import {
   StatLabel,
   StatNumber,
   StatHelpText,
+  useToast,
 } from '@chakra-ui/react';
 import {
   FaCalendarAlt,
@@ -56,6 +57,7 @@ import {
   isWithinInterval,
 } from 'date-fns';
 import { useCatData } from '../contexts/CatDataContext';
+import { EditableEntry } from '../components/EditableEntry';
 import type { CalendarEvent, CalendarView } from '../types';
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -74,13 +76,14 @@ const Calendar: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [selectedEvents, setSelectedEvents] = useState<CalendarEvent[]>([]);
+  const toast = useToast();
 
   const bgColor = useColorModeValue('white', 'gray.800');
   const borderColor = useColorModeValue('gray.200', 'gray.700');
   const todayBg = useColorModeValue('blue.50', 'blue.900');
   const hoverBg = useColorModeValue('gray.50', 'gray.700');
 
-  const { washroomEntries, foodEntries, sleepEntries, weightEntries } = useCatData();
+  const { washroomEntries, foodEntries, sleepEntries, weightEntries, updateEntry, deleteEntry } = useCatData();
 
   // Aggregate all events for the calendar
   const allEvents = useMemo(() => {
@@ -520,84 +523,219 @@ const Calendar: React.FC = () => {
           <ModalBody pb={6}>
             <VStack align="stretch" spacing={4}>
               {selectedEvents.map((event) => {
-                const Icon = CATEGORY_COLORS[event.category].icon;
                 const eventData = event.data as any;
 
+                // Define fields based on category
+                const getFieldsForCategory = (category: string) => {
+                  switch (category) {
+                    case 'washroom':
+                      return [
+                        { key: 'timestamp', label: 'Date & Time', type: 'datetime' as const },
+                        { 
+                          key: 'type', 
+                          label: 'Type', 
+                          type: 'select' as const,
+                          options: [
+                            { value: 'pee', label: 'Pee' },
+                            { value: 'pooper', label: 'Pooper' },
+                            { value: 'both', label: 'Both' }
+                          ]
+                        },
+                        { 
+                          key: 'consistency', 
+                          label: 'Consistency', 
+                          type: 'select' as const,
+                          options: [
+                            { value: 'firm', label: 'Firm' },
+                            { value: 'soft', label: 'Soft' },
+                            { value: 'half n half', label: 'Half n Half' },
+                            { value: 'diarrhea', label: 'Diarrhea' }
+                          ]
+                        },
+                        { 
+                          key: 'color', 
+                          label: 'Color', 
+                          type: 'select' as const,
+                          options: [
+                            { value: 'yellow', label: 'Yellow' },
+                            { value: 'green', label: 'Green' },
+                            { value: 'brown', label: 'Brown' },
+                            { value: 'dark brown', label: 'Dark Brown' },
+                            { value: 'black', label: 'Black' },
+                            { value: 'other', label: 'Other' }
+                          ]
+                        },
+                        { key: 'hasBlood', label: 'Blood Present', type: 'checkbox' as const },
+                        { key: 'photos', label: 'Photos', type: 'photos' as const, maxFiles: 3 },
+                        { key: 'notes', label: 'Notes', type: 'textarea' as const }
+                      ];
+                    case 'food':
+                      return [
+                        { key: 'timestamp', label: 'Date & Time', type: 'datetime' as const },
+                        { 
+                          key: 'foodCategory', 
+                          label: 'Category', 
+                          type: 'select' as const,
+                          options: [
+                            { value: 'dry', label: 'Dry Food' },
+                            { value: 'wet', label: 'Wet Food' },
+                            { value: 'treats', label: 'Treats' },
+                            { value: 'supplements', label: 'Supplements' }
+                          ]
+                        },
+                        { key: 'foodType', label: 'Type/Flavor', type: 'text' as const },
+                        { key: 'brand', label: 'Brand', type: 'text' as const },
+                        { key: 'amount', label: 'Amount', type: 'number' as const },
+                        { 
+                          key: 'unit', 
+                          label: 'Unit', 
+                          type: 'select' as const,
+                          options: [
+                            { value: 'grams', label: 'Grams' },
+                            { value: 'cups', label: 'Cups' },
+                            { value: 'portions', label: 'Portions' },
+                            { value: 'pieces', label: 'Pieces' }
+                          ]
+                        },
+                        { key: 'portionToGrams', label: 'Grams per Portion', type: 'number' as const },
+                        { key: 'photos', label: 'Photos', type: 'photos' as const, maxFiles: 2 },
+                        { key: 'notes', label: 'Notes', type: 'textarea' as const }
+                      ];
+                    case 'sleep':
+                      return [
+                        { key: 'startTime', label: 'Start Time', type: 'datetime' as const },
+                        { key: 'endTime', label: 'End Time', type: 'datetime' as const },
+                        { 
+                          key: 'quality', 
+                          label: 'Quality', 
+                          type: 'select' as const,
+                          options: [
+                            { value: 'deep', label: 'Deep' },
+                            { value: 'normal', label: 'Normal' },
+                            { value: 'restless', label: 'Restless' },
+                            { value: 'interrupted', label: 'Interrupted' }
+                          ]
+                        },
+                        { key: 'location', label: 'Location', type: 'text' as const },
+                        { key: 'photos', label: 'Photos', type: 'photos' as const, maxFiles: 2 },
+                        { key: 'notes', label: 'Notes', type: 'textarea' as const }
+                      ];
+                    case 'weight':
+                      return [
+                        { key: 'measurementDate', label: 'Date', type: 'date' as const },
+                        { key: 'weight', label: 'Weight (kg)', type: 'number' as const },
+                        { key: 'photos', label: 'Photos', type: 'photos' as const, maxFiles: 2 },
+                        { key: 'notes', label: 'Notes', type: 'textarea' as const }
+                      ];
+                    default:
+                      return [];
+                  }
+                };
+
+                const handleSave = (updatedEntry: any) => {
+                  // Convert date strings to Date objects if needed
+                  const entryToSave = { ...updatedEntry };
+                  
+                  if (event.category === 'washroom' && !(updatedEntry.timestamp instanceof Date)) {
+                    entryToSave.timestamp = new Date(updatedEntry.timestamp);
+                  }
+                  if (event.category === 'food' && !(updatedEntry.timestamp instanceof Date)) {
+                    entryToSave.timestamp = new Date(updatedEntry.timestamp);
+                  }
+                  if (event.category === 'sleep') {
+                    if (!(updatedEntry.startTime instanceof Date)) {
+                      entryToSave.startTime = new Date(updatedEntry.startTime);
+                    }
+                    if (!(updatedEntry.endTime instanceof Date)) {
+                      entryToSave.endTime = new Date(updatedEntry.endTime);
+                    }
+                  }
+                  if (event.category === 'weight' && !(updatedEntry.measurementDate instanceof Date)) {
+                    entryToSave.measurementDate = new Date(updatedEntry.measurementDate);
+                  }
+
+                  updateEntry(event.category, event.id, entryToSave);
+                  toast({
+                    title: `${event.category.charAt(0).toUpperCase() + event.category.slice(1)} entry updated`,
+                    status: 'success',
+                    duration: 2000,
+                    isClosable: true,
+                  });
+                };
+
+                const handleDelete = (id: string) => {
+                  deleteEntry(event.category, id);
+                  toast({
+                    title: 'Entry deleted',
+                    status: 'info',
+                    duration: 2000,
+                    isClosable: true,
+                  });
+                  // Remove from selected events
+                  setSelectedEvents(prev => prev.filter(e => e.id !== id));
+                  if (selectedEvents.length === 1) {
+                    onClose();
+                  }
+                };
+
                 return (
-                  <Box
+                  <EditableEntry
                     key={event.id}
-                    p={4}
-                    borderWidth={1}
-                    borderColor={borderColor}
-                    borderRadius="md"
-                  >
-                    <HStack spacing={3} mb={3}>
-                      <Box
-                        p={2}
-                        borderRadius="md"
-                        bg={CATEGORY_COLORS[event.category].bg}
-                        color={CATEGORY_COLORS[event.category].color}
-                      >
-                        <Icon />
-                      </Box>
-                      <VStack align="start" spacing={0} flex={1}>
-                        <Text fontWeight="bold">{event.title}</Text>
-                        <Text fontSize="sm" color="gray.600">
-                          {format(event.date, 'h:mm a')}
-                        </Text>
-                      </VStack>
-                    </HStack>
+                    entry={eventData}
+                    onSave={handleSave}
+                    onDelete={handleDelete}
+                    fields={getFieldsForCategory(event.category)}
+                    renderDisplay={(entry) => {
+                      const Icon = CATEGORY_COLORS[event.category].icon;
+                      
+                      return (
+                        <VStack align="start" spacing={2}>
+                          <HStack spacing={3}>
+                            <Box
+                              p={2}
+                              borderRadius="md"
+                              bg={CATEGORY_COLORS[event.category].bg}
+                              color={CATEGORY_COLORS[event.category].color}
+                            >
+                              <Icon />
+                            </Box>
+                            <VStack align="start" spacing={0} flex={1}>
+                              <Text fontWeight="bold">{event.title}</Text>
+                              <Text fontSize="sm" color="gray.600">
+                                {format(event.date, 'h:mm a')}
+                              </Text>
+                            </VStack>
+                          </HStack>
 
-                    {event.description && (
-                      <Text fontSize="sm" mb={2}>
-                        {event.description}
-                      </Text>
-                    )}
+                          {event.description && (
+                            <Text fontSize="sm">
+                              {event.description}
+                            </Text>
+                          )}
 
-                    {/* Category-specific details */}
-                    {event.category === 'washroom' && eventData.hasBlood && (
-                      <Badge colorScheme="red" mb={2}>
-                        <FaTint style={{ marginRight: '4px' }} />
-                        Blood Present
-                      </Badge>
-                    )}
+                          {/* Category-specific details */}
+                          {event.category === 'washroom' && eventData.hasBlood && (
+                            <Badge colorScheme="red">
+                              <FaTint style={{ marginRight: '4px' }} />
+                              Blood Present
+                            </Badge>
+                          )}
 
-                    {event.category === 'washroom' && eventData.photos?.length > 0 && (
-                      <SimpleGrid columns={3} spacing={2} mt={2}>
-                        {eventData.photos.map((photo: string, idx: number) => (
-                          <Image
-                            key={idx}
-                            src={photo}
-                            alt={`Photo ${idx + 1}`}
-                            borderRadius="md"
-                            h="80px"
-                            objectFit="cover"
-                          />
-                        ))}
-                      </SimpleGrid>
-                    )}
+                          {eventData.photos?.length > 0 && (
+                            <Text fontSize="xs" color="gray.500">
+                              📷 {eventData.photos.length} photo{eventData.photos.length > 1 ? 's' : ''}
+                            </Text>
+                          )}
 
-                    {event.category === 'weight' && eventData.photos?.length > 0 && (
-                      <SimpleGrid columns={2} spacing={2} mt={2}>
-                        {eventData.photos.map((photo: string, idx: number) => (
-                          <Image
-                            key={idx}
-                            src={photo}
-                            alt={`Weight photo ${idx + 1}`}
-                            borderRadius="md"
-                            h="100px"
-                            objectFit="cover"
-                          />
-                        ))}
-                      </SimpleGrid>
-                    )}
-
-                    {eventData.notes && (
-                      <Text fontSize="sm" color="gray.600" mt={2}>
-                        Notes: {eventData.notes}
-                      </Text>
-                    )}
-                  </Box>
+                          {eventData.notes && (
+                            <Text fontSize="sm" color="gray.600">
+                              Notes: {eventData.notes}
+                            </Text>
+                          )}
+                        </VStack>
+                      );
+                    }}
+                  />
                 );
               })}
             </VStack>
