@@ -23,7 +23,6 @@ import {
   ModalCloseButton,
   useDisclosure,
   SimpleGrid,
-  Image,
   Stat,
   StatLabel,
   StatNumber,
@@ -685,7 +684,7 @@ const Calendar: React.FC = () => {
                     onSave={handleSave}
                     onDelete={handleDelete}
                     fields={getFieldsForCategory(event.category)}
-                    renderDisplay={(entry) => {
+                    renderDisplay={() => {
                       const Icon = CATEGORY_COLORS[event.category].icon;
                       
                       return (
