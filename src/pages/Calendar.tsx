@@ -24,6 +24,10 @@ import {
   useDisclosure,
   SimpleGrid,
   Image,
+  Stat,
+  StatLabel,
+  StatNumber,
+  StatHelpText,
 } from '@chakra-ui/react';
 import {
   FaCalendarAlt,
@@ -49,6 +53,7 @@ import {
   addMonths,
   subMonths,
   isSameMonth,
+  isWithinInterval,
 } from 'date-fns';
 import { useCatData } from '../contexts/CatDataContext';
 import type { CalendarEvent, CalendarView } from '../types';
@@ -143,6 +148,59 @@ const Calendar: React.FC = () => {
 
     return events.sort((a, b) => b.date.getTime() - a.date.getTime());
   }, [washroomEntries, foodEntries, sleepEntries, weightEntries]);
+
+  // Calculate monthly statistics
+  const monthlyStats = useMemo(() => {
+    const monthStart = startOfMonth(currentDate);
+    const monthEnd = endOfMonth(currentDate);
+    
+    // Filter entries for current month, ensuring dates are Date objects
+    const monthlyWashroom = washroomEntries.filter(entry => {
+      const entryDate = entry.timestamp instanceof Date ? entry.timestamp : new Date(entry.timestamp);
+      return isWithinInterval(entryDate, { start: monthStart, end: monthEnd });
+    });
+    
+    const monthlyFood = foodEntries.filter(entry => {
+      const entryDate = entry.timestamp instanceof Date ? entry.timestamp : new Date(entry.timestamp);
+      return isWithinInterval(entryDate, { start: monthStart, end: monthEnd });
+    });
+    
+    const monthlySleep = sleepEntries.filter(entry => {
+      const entryDate = entry.startTime instanceof Date ? entry.startTime : new Date(entry.startTime);
+      return isWithinInterval(entryDate, { start: monthStart, end: monthEnd });
+    });
+    
+    const monthlyWeight = weightEntries.filter(entry => {
+      const entryDate = entry.measurementDate instanceof Date ? entry.measurementDate : new Date(entry.measurementDate);
+      return isWithinInterval(entryDate, { start: monthStart, end: monthEnd });
+    });
+    
+    // Calculate totals
+    const totalFood = monthlyFood.reduce((total, entry) => {
+      const entryAmount = typeof entry.amount === 'string' ? parseFloat(entry.amount) : entry.amount;
+      const portionGrams = typeof entry.portionToGrams === 'string' ? parseFloat(entry.portionToGrams) : (entry.portionToGrams || 10);
+      
+      const amount = entry.unit === 'grams' ? entryAmount : 
+                    entry.unit === 'cups' ? entryAmount * 120 :
+                    entry.unit === 'portions' ? entryAmount * portionGrams :
+                    entryAmount * 10;
+      
+      return total + (isNaN(amount) ? 0 : amount);
+    }, 0);
+    
+    const totalSleepHours = monthlySleep.reduce((total, entry) => total + entry.duration, 0) / 60;
+    
+    const avgWeight = monthlyWeight.length > 0 
+      ? monthlyWeight.reduce((sum, entry) => sum + entry.weight, 0) / monthlyWeight.length * 2.20462 
+      : 0;
+    
+    return {
+      washroom: monthlyWashroom.length,
+      food: totalFood,
+      sleep: totalSleepHours,
+      weight: avgWeight
+    };
+  }, [currentDate, washroomEntries, foodEntries, sleepEntries, weightEntries]);
 
   // Get events for a specific date
   const getEventsForDate = (date: Date) => {
@@ -370,6 +428,51 @@ const Calendar: React.FC = () => {
               })}
             </HStack>
           </HStack>
+        </CardBody>
+      </Card>
+
+      {/* Monthly Statistics */}
+      <Card bg={bgColor} borderColor={borderColor} borderWidth={1}>
+        <CardBody>
+          <Grid templateColumns={{ base: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' }} gap={4}>
+            <Stat>
+              <StatLabel fontSize="sm">Monthly Washroom Visits</StatLabel>
+              <StatNumber fontSize="xl">{monthlyStats.washroom}</StatNumber>
+              <StatHelpText fontSize="xs">
+                ~{(monthlyStats.washroom / new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate()).toFixed(1)}/day
+              </StatHelpText>
+            </Stat>
+            
+            <Stat>
+              <StatLabel fontSize="sm">Monthly Food Eaten</StatLabel>
+              <StatNumber fontSize="xl">
+                {monthlyStats.food >= 1000 
+                  ? `${(monthlyStats.food / 1000).toFixed(1)}kg`
+                  : `${Math.round(monthlyStats.food)}g`}
+              </StatNumber>
+              <StatHelpText fontSize="xs">
+                ~{Math.round(monthlyStats.food / new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate())}g/day
+              </StatHelpText>
+            </Stat>
+            
+            <Stat>
+              <StatLabel fontSize="sm">Monthly Sleep Time</StatLabel>
+              <StatNumber fontSize="xl">{monthlyStats.sleep.toFixed(1)}h</StatNumber>
+              <StatHelpText fontSize="xs">
+                ~{(monthlyStats.sleep / new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate()).toFixed(1)}h/day
+              </StatHelpText>
+            </Stat>
+            
+            <Stat>
+              <StatLabel fontSize="sm">Monthly Weight Average</StatLabel>
+              <StatNumber fontSize="xl">
+                {monthlyStats.weight > 0 ? `${monthlyStats.weight.toFixed(1)} lb` : 'No data'}
+              </StatNumber>
+              <StatHelpText fontSize="xs">
+                {monthlyStats.weight > 0 ? `${(monthlyStats.weight / 2.20462).toFixed(1)} kg` : '\u00A0'}
+              </StatHelpText>
+            </Stat>
+          </Grid>
         </CardBody>
       </Card>
 

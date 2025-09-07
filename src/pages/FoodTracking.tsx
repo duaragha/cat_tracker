@@ -120,9 +120,12 @@ const FoodTracking = () => {
     const todayEntries = foodEntries.filter(entry => isToday(entry.timestamp));
     const weekStart = startOfWeek(new Date());
     const weekEnd = endOfWeek(new Date());
-    const weekEntries = foodEntries.filter(entry => 
-      isWithinInterval(entry.timestamp, { start: weekStart, end: weekEnd })
-    );
+    
+    // Ensure timestamps are Date objects before filtering
+    const weekEntries = foodEntries.filter(entry => {
+      const entryDate = entry.timestamp instanceof Date ? entry.timestamp : new Date(entry.timestamp);
+      return isWithinInterval(entryDate, { start: weekStart, end: weekEnd });
+    });
 
     const calculateTotals = (entries: typeof foodEntries) => {
       let dryTotal = 0;
