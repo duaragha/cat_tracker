@@ -275,7 +275,17 @@ const SleepTracking = () => {
                   key={entry.id}
                   entry={entry}
                   onSave={(updatedEntry) => {
-                    updateEntry('sleep', entry.id, updatedEntry);
+                    // Convert date strings to Date objects if needed
+                    const entryToSave = {
+                      ...updatedEntry,
+                      startTime: updatedEntry.startTime instanceof Date 
+                        ? updatedEntry.startTime 
+                        : new Date(updatedEntry.startTime),
+                      endTime: updatedEntry.endTime instanceof Date 
+                        ? updatedEntry.endTime 
+                        : new Date(updatedEntry.endTime)
+                    };
+                    updateEntry('sleep', entry.id, entryToSave);
                     toast({
                       title: 'Sleep session updated',
                       status: 'success',

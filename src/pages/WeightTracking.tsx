@@ -283,10 +283,13 @@ const WeightTracking = () => {
                     key={entry.id}
                     entry={entry}
                     onSave={(updatedEntry) => {
-                      // Convert weight back to kg for storage
+                      // Convert weight back to kg for storage and ensure date is a Date object
                       const updatedWithKg = {
                         ...updatedEntry,
-                        weight: updatedEntry.weight / 2.20462
+                        weight: updatedEntry.weight / 2.20462,
+                        measurementDate: updatedEntry.measurementDate instanceof Date
+                          ? updatedEntry.measurementDate
+                          : new Date(updatedEntry.measurementDate)
                       };
                       updateEntry('weight', entry.id, updatedWithKg);
                       toast({

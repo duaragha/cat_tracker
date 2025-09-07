@@ -301,7 +301,14 @@ const WashroomTracking = () => {
                   key={entry.id}
                   entry={entry}
                   onSave={(updatedEntry) => {
-                    updateEntry('washroom', entry.id, updatedEntry);
+                    // Convert timestamp string to Date if needed
+                    const entryToSave = {
+                      ...updatedEntry,
+                      timestamp: updatedEntry.timestamp instanceof Date 
+                        ? updatedEntry.timestamp 
+                        : new Date(updatedEntry.timestamp)
+                    };
+                    updateEntry('washroom', entry.id, entryToSave);
                     toast({
                       title: 'Entry updated',
                       status: 'success',

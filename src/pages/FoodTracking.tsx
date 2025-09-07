@@ -402,7 +402,14 @@ const FoodTracking = () => {
                   key={entry.id}
                   entry={entry}
                   onSave={(updatedEntry) => {
-                    updateEntry('food', entry.id, updatedEntry);
+                    // Convert timestamp string to Date if needed
+                    const entryToSave = {
+                      ...updatedEntry,
+                      timestamp: updatedEntry.timestamp instanceof Date 
+                        ? updatedEntry.timestamp 
+                        : new Date(updatedEntry.timestamp)
+                    };
+                    updateEntry('food', entry.id, entryToSave);
                     toast({
                       title: 'Meal updated',
                       status: 'success',
