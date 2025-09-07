@@ -94,13 +94,21 @@ const WashroomTracking = () => {
   };
 
   // Calculate statistics
-  const todayCount = washroomEntries.filter(entry => isToday(entry.timestamp)).length;
+  const todayEntries = washroomEntries.filter(entry => isToday(entry.timestamp));
+  const todayCount = todayEntries.length;
+  const todayPee = todayEntries.filter(e => e.type === 'pee').length;
+  const todayPoop = todayEntries.filter(e => e.type === 'pooper').length;
+  const todayBoth = todayEntries.filter(e => e.type === 'both').length;
   
   const weekStart = startOfWeek(new Date());
   const weekEnd = endOfWeek(new Date());
-  const weekCount = washroomEntries.filter(entry => 
+  const weekEntries = washroomEntries.filter(entry => 
     isWithinInterval(entry.timestamp, { start: weekStart, end: weekEnd })
-  ).length;
+  );
+  const weekCount = weekEntries.length;
+  const weekPee = weekEntries.filter(e => e.type === 'pee').length;
+  const weekPoop = weekEntries.filter(e => e.type === 'pooper').length;
+  const weekBoth = weekEntries.filter(e => e.type === 'both').length;
   
   const avgPerDay = weekCount / 7;
 
@@ -151,7 +159,23 @@ const WashroomTracking = () => {
             <Stat>
               <StatLabel>Today</StatLabel>
               <StatNumber>{todayCount}</StatNumber>
-              <Text fontSize="sm" color="gray.600">visits</Text>
+              <HStack spacing={1} mt={2}>
+                {todayPee > 0 && (
+                  <Badge colorScheme="yellow" fontSize="xs">
+                    💧 {todayPee}
+                  </Badge>
+                )}
+                {todayPoop > 0 && (
+                  <Badge colorScheme="orange" fontSize="xs">
+                    💩 {todayPoop}
+                  </Badge>
+                )}
+                {todayBoth > 0 && (
+                  <Badge colorScheme="purple" fontSize="xs">
+                    Both: {todayBoth}
+                  </Badge>
+                )}
+              </HStack>
             </Stat>
           </CardBody>
         </Card>
@@ -160,7 +184,23 @@ const WashroomTracking = () => {
             <Stat>
               <StatLabel>This Week</StatLabel>
               <StatNumber>{weekCount}</StatNumber>
-              <Text fontSize="sm" color="gray.600">visits</Text>
+              <HStack spacing={1} mt={2}>
+                {weekPee > 0 && (
+                  <Badge colorScheme="yellow" fontSize="xs">
+                    💧 {weekPee}
+                  </Badge>
+                )}
+                {weekPoop > 0 && (
+                  <Badge colorScheme="orange" fontSize="xs">
+                    💩 {weekPoop}
+                  </Badge>
+                )}
+                {weekBoth > 0 && (
+                  <Badge colorScheme="purple" fontSize="xs">
+                    Both: {weekBoth}
+                  </Badge>
+                )}
+              </HStack>
             </Stat>
           </CardBody>
         </Card>

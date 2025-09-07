@@ -115,9 +115,10 @@ const SleepTracking = () => {
 
   const getQualityColor = (quality?: string) => {
     switch (quality) {
-      case 'restful': return 'green';
+      case 'deep': return 'green';
       case 'normal': return 'blue';
       case 'restless': return 'orange';
+      case 'interrupted': return 'red';
       default: return 'gray';
     }
   };
@@ -205,9 +206,10 @@ const SleepTracking = () => {
                     value={formData.quality}
                     onChange={(e) => setFormData({ ...formData, quality: e.target.value as any })}
                   >
-                    <option value="restful">Restful</option>
+                    <option value="deep">Deep</option>
                     <option value="normal">Normal</option>
                     <option value="restless">Restless</option>
+                    <option value="interrupted">Interrupted</option>
                   </Select>
                 </FormControl>
 
