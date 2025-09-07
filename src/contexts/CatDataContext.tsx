@@ -145,6 +145,7 @@ export const CatDataProvider: React.FC<{ children: ReactNode }> = ({ children })
         entry.startTime = new Date(e.start_time);
         entry.endTime = new Date(e.end_time);
         entry.createdAt = new Date(e.created_at);
+        // Photos are already parsed by the backend
         return entry;
       }));
 
