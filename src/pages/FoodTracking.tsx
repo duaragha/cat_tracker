@@ -92,9 +92,9 @@ const FoodTracking = () => {
       isClosable: true,
     });
 
-    // Reset form
-    setFormData({
-      timestamp: format(new Date(), "yyyy-MM-dd'T'HH:mm"),
+    // Keep the submitted timestamp, only reset other fields
+    setFormData(prev => ({
+      timestamp: prev.timestamp,
       foodCategory: 'Dry',
       foodType: '',
       brand: '',
@@ -102,7 +102,7 @@ const FoodTracking = () => {
       unit: 'portions',
       portionToGrams: 10,
       notes: ''
-    });
+    }));
   };
 
   const handleDelete = (id: string) => {

@@ -74,15 +74,15 @@ const SleepTracking = () => {
       isClosable: true,
     });
 
-    // Reset form
-    setFormData({
-      startTime: format(new Date(), "yyyy-MM-dd'T'HH:mm"),
-      endTime: format(new Date(), "yyyy-MM-dd'T'HH:mm"),
+    // Keep the submitted timestamp, only reset other fields
+    setFormData(prev => ({
+      startTime: prev.startTime,
+      endTime: prev.endTime,
       quality: 'normal',
       location: 'Bed',
       notes: '',
       photos: []
-    });
+    }));
   };
 
   const handleDelete = (id: string) => {

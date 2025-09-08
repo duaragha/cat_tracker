@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sleep Tracking Debug</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; max-width: 1200px; margin: 0 auto; }
+        h1 { color: #333; }
+        .section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background-color: #d4edda; color: #155724; padding: 10px; border-radius: 5px; }
+        .error { background-color: #f8d7da; color: #721c24; padding: 10px; border-radius: 5px; }
+        .entry { background: #f5f5f5; padding: 10px; margin: 10px 0; border-radius: 5px; }
+        button { padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        input, select { padding: 8px; margin: 5px; border: 1px solid #ddd; border-radius: 4px; }
+        .log { background: #333; color: #0f0; padding: 10px; font-family: monospace; max-height: 300px; overflow-y: auto; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Sleep Tracking Debug Tool</h1>
+    
+    <div class="section">
+        <h2>1. Test API Connection</h2>
+        <button onclick="testAPI()">Test Backend API</button>
+        <div id="apiResult"></div>
+    </div>
+
+    <div class="section">
+        <h2>2. Create Test Sleep Entry</h2>
+        <div>
+            <label>Start Time: <input type="datetime-local" id="startTime" /></label><br>
+            <label>End Time: <input type="datetime-local" id="endTime" /></label><br>
+            <label>Location: 
+                <select id="location">
+                    <option value="Bed">Bed</option>
+                    <option value="Couch">Couch</option>
+                    <option value="Cat Tree">Cat Tree</option>
+                    <option value="Cat Bed">Cat Bed</option>
+                </select>
+            </label><br>
+            <label>Quality: 
+                <select id="quality">
+                    <option value="deep">Deep</option>
+                    <option value="normal">Normal</option>
+                    <option value="restless">Restless</option>
+                </select>
+            </label><br>
+            <button onclick="createSleepEntry()">Create Entry</button>
+        </div>
+        <div id="createResult"></div>
+    </div>
+
+    <div class="section">
+        <h2>3. View Current Sleep Entries</h2>
+        <button onclick="fetchSleepEntries()">Fetch All Entries</button>
+        <div id="entriesList"></div>
+    </div>
+
+    <div class="section">
+        <h2>4. Console Log</h2>
+        <div id="console" class="log"></div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:3001/api';
+        const CAT_ID = 'a6a4fd1c-96c8-458f-a134-79f644ff69ce';
+        
+        function log(message, type = 'info') {
+            const consoleDiv = document.getElementById('console');
+            const timestamp = new Date().toLocaleTimeString();
+            const color = type === 'error' ? '#f00' : type === 'success' ? '#0f0' : '#fff';
+            consoleDiv.innerHTML += `<div style="color: ${color}">[${timestamp}] ${message}</div>`;
+            consoleDiv.scrollTop = consoleDiv.scrollHeight;
+        }
+
+        // Set default times
+        window.onload = () => {
+            const now = new Date();
+            const twoHoursAgo = new Date(now.getTime() - 2 * 60 * 60 * 1000);
+            document.getElementById('startTime').value = twoHoursAgo.toISOString().slice(0, 16);
+            document.getElementById('endTime').value = now.toISOString().slice(0, 16);
+        };
+
+        async function testAPI() {
+            const resultDiv = document.getElementById('apiResult');
+            try {
+                log('Testing API connection...');
+                const response = await fetch(`${API_URL}/health`);
+                const data = await response.json();
+                
+                if (data.status === 'healthy') {
+                    resultDiv.innerHTML = '<div class="success">✅ Backend API is working!</div>';
+                    log('API connection successful', 'success');
+                } else {
+                    resultDiv.innerHTML = '<div class="error">❌ API returned unexpected response</div>';
+                    log('API returned unexpected response', 'error');
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Failed to connect to API: ${error.message}</div>`;
+                log(`API connection failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function createSleepEntry() {
+            const resultDiv = document.getElementById('createResult');
+            const startTime = document.getElementById('startTime').value;
+            const endTime = document.getElementById('endTime').value;
+            const location = document.getElementById('location').value;
+            const quality = document.getElementById('quality').value;
+            
+            if (!startTime || !endTime) {
+                resultDiv.innerHTML = '<div class="error">Please select both start and end times</div>';
+                return;
+            }
+            
+            const entry = {
+                catId: CAT_ID,
+                startTime: new Date(startTime).toISOString(),
+                endTime: new Date(endTime).toISOString(),
+                location: location,
+                quality: quality,
+                notes: 'Created via debug tool',
+                photos: []
+            };
+            
+            try {
+                log(`Creating sleep entry: ${JSON.stringify(entry)}`);
+                const response = await fetch(`${API_URL}/sleep`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(entry)
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    resultDiv.innerHTML = `<div class="success">✅ Entry created successfully!<br>ID: ${data.id}<br>Duration: ${data.duration} minutes</div>`;
+                    log(`Sleep entry created: ID=${data.id}`, 'success');
+                    
+                    // Automatically refresh the list
+                    fetchSleepEntries();
+                } else {
+                    const error = await response.text();
+                    resultDiv.innerHTML = `<div class="error">❌ Failed to create entry: ${error}</div>`;
+                    log(`Failed to create entry: ${error}`, 'error');
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+                log(`Error creating entry: ${error.message}`, 'error');
+            }
+        }
+
+        async function fetchSleepEntries() {
+            const listDiv = document.getElementById('entriesList');
+            try {
+                log('Fetching sleep entries...');
+                const response = await fetch(`${API_URL}/sleep/${CAT_ID}`);
+                const entries = await response.json();
+                
+                if (entries.length === 0) {
+                    listDiv.innerHTML = '<div class="error">No sleep entries found</div>';
+                    log('No sleep entries found', 'error');
+                } else {
+                    log(`Found ${entries.length} sleep entries`, 'success');
+                    let html = `<div class="success">Found ${entries.length} sleep entries:</div>`;
+                    
+                    entries.slice(0, 10).forEach(entry => {
+                        const start = new Date(entry.start_time);
+                        const end = new Date(entry.end_time);
+                        html += `
+                            <div class="entry">
+                                <strong>${start.toLocaleString()} - ${end.toLocaleTimeString()}</strong><br>
+                                Location: ${entry.location} | Quality: ${entry.quality}<br>
+                                Duration: ${entry.duration} minutes<br>
+                                ID: ${entry.id}<br>
+                                ${entry.notes ? `Notes: ${entry.notes}` : ''}
+                            </div>
+                        `;
+                    });
+                    
+                    listDiv.innerHTML = html;
+                }
+            } catch (error) {
+                listDiv.innerHTML = `<div class="error">❌ Failed to fetch entries: ${error.message}</div>`;
+                log(`Failed to fetch entries: ${error.message}`, 'error');
+            }
+        }
+    </script>
+</body>
+</html>

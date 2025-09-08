@@ -38,7 +38,7 @@ const WashroomTracking = () => {
 
   const [formData, setFormData] = useState<WashroomFormData>({
     timestamp: format(new Date(), "yyyy-MM-dd'T'HH:mm"),
-    type: 'both',
+    type: 'pee',
     consistency: 'firm',
     hasBlood: false,
     color: 'brown',
@@ -67,16 +67,16 @@ const WashroomTracking = () => {
       isClosable: true,
     });
 
-    // Reset form
-    setFormData({
-      timestamp: format(new Date(), "yyyy-MM-dd'T'HH:mm"),
-      type: 'both',
+    // Keep the submitted timestamp, only reset other fields
+    setFormData(prev => ({
+      timestamp: prev.timestamp,
+      type: 'pee',
       consistency: 'firm',
       hasBlood: false,
       color: 'brown',
       photos: [],
       notes: ''
-    });
+    }));
   };
 
   const handleDelete = (id: string) => {
@@ -240,7 +240,6 @@ const WashroomTracking = () => {
                   >
                     <option value="pee">Pee</option>
                     <option value="pooper">Pooper</option>
-                    <option value="both">Both</option>
                   </Select>
                 </FormControl>
 

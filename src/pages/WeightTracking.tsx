@@ -74,13 +74,13 @@ const WeightTracking = () => {
       isClosable: true,
     });
 
-    // Reset form
-    setFormData({
-      weight: formData.weight,
-      measurementDate: format(new Date(), 'yyyy-MM-dd'),
+    // Keep the submitted date, only reset other fields
+    setFormData(prev => ({
+      weight: prev.weight,
+      measurementDate: prev.measurementDate,
       notes: '',
       photos: []
-    });
+    }));
   };
 
   const handleDelete = (id: string) => {
