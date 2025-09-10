@@ -17,7 +17,7 @@ export interface WashroomEntry {
   type: 'pee' | 'pooper' | 'both';
   consistency?: 'firm' | 'soft' | 'half n half' | 'diarrhea';
   hasBlood: boolean;
-  color?: 'yellow' | 'green' | 'brown' | 'dark brown' | 'black' | 'other';
+  color?: 'yellow' | 'green' | 'light brown' | 'brown' | 'dark brown' | 'black' | 'other';
   photos?: string[]; // 2-3 photos max
   notes?: string;
   createdAt: Date;
@@ -88,7 +88,7 @@ export interface WashroomFormData {
   type: 'pee' | 'pooper' | 'both';
   consistency?: 'firm' | 'soft' | 'half n half' | 'diarrhea';
   hasBlood: boolean;
-  color?: 'yellow' | 'green' | 'brown' | 'dark brown' | 'black' | 'other';
+  color?: 'yellow' | 'green' | 'light brown' | 'brown' | 'dark brown' | 'black' | 'other';
   photos?: string[];
   notes?: string;
 }

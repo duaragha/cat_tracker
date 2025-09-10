@@ -37,7 +37,7 @@ import {
 import { Link as RouterLink, useLocation, Outlet } from 'react-router-dom';
 import { useCatData } from '../contexts/CatDataContext';
 
-const NavItem = ({ icon, children, to }: { icon: any; children: string; to: string }) => {
+const NavItem = ({ icon, children, to, onClick }: { icon: any; children: string; to: string; onClick?: () => void }) => {
   const location = useLocation();
   const isActive = location.pathname === to;
   const bgColor = useColorModeValue('blue.50', 'blue.900');
@@ -53,6 +53,7 @@ const NavItem = ({ icon, children, to }: { icon: any; children: string; to: stri
       color={isActive ? color : 'inherit'}
       justifyContent="flex-start"
       width="full"
+      onClick={onClick}
     >
       {children}
     </Button>
@@ -164,7 +165,7 @@ const Layout = () => {
             <DrawerBody>
               <VStack spacing={2}>
                 {navItems.map((item) => (
-                  <NavItem key={item.path} icon={item.icon} to={item.path}>
+                  <NavItem key={item.path} icon={item.icon} to={item.path} onClick={onClose}>
                     {item.label}
                   </NavItem>
                 ))}

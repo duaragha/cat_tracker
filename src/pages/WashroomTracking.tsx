@@ -135,6 +135,7 @@ const WashroomTracking = () => {
     const colorMap: Record<string, string> = {
       'yellow': '#F6E05E',
       'green': '#48BB78',
+      'light brown': '#D2691E',
       'brown': '#8B5A3C',
       'dark brown': '#5C4033',
       'black': '#2D3748',
@@ -249,6 +250,12 @@ const WashroomTracking = () => {
                     <Select
                       value={formData.consistency}
                       onChange={(e) => setFormData({ ...formData, consistency: e.target.value as any })}
+                      size="md"
+                      sx={{
+                        option: {
+                          padding: '8px 12px',
+                        }
+                      }}
                     >
                       <option value="firm">Firm</option>
                       <option value="soft">Soft</option>
@@ -266,9 +273,16 @@ const WashroomTracking = () => {
                     <Select
                       value={formData.color}
                       onChange={(e) => setFormData({ ...formData, color: e.target.value as any })}
+                      size="md"
+                      sx={{
+                        option: {
+                          padding: '8px 12px',
+                        }
+                      }}
                     >
                       <option value="yellow">Yellow</option>
                       <option value="green">Green</option>
+                      <option value="light brown">Light Brown</option>
                       <option value="brown">Brown</option>
                       <option value="dark brown">Dark Brown</option>
                       <option value="black">Black</option>

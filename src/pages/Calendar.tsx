@@ -99,7 +99,7 @@ const Calendar: React.FC = () => {
         id: entry.id,
         date: entry.timestamp,
         category: 'washroom',
-        title: `${entry.type} - ${entry.consistency || 'Normal'}`,
+        title: `${entry.type.charAt(0).toUpperCase() + entry.type.slice(1)} - ${entry.consistency || 'Normal'}`,
         description: entry.notes,
         data: entry,
         color: CATEGORY_COLORS.washroom.color,
