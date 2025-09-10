@@ -69,6 +69,7 @@ export async function initDB() {
         location VARCHAR(50) NOT NULL,
         custom_location VARCHAR(255),
         notes TEXT,
+        photos TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
@@ -98,6 +99,18 @@ export async function initDB() {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
+
+    // Add photos column to sleep_entries if it doesn't exist (for existing deployments)
+    try {
+      await pool.query(`
+        ALTER TABLE sleep_entries 
+        ADD COLUMN IF NOT EXISTS photos TEXT
+      `);
+      console.log('Ensured photos column exists in sleep_entries table');
+    } catch (error) {
+      // Column might already exist or table doesn't exist yet
+      console.log('Photos column check completed');
+    }
 
     console.log('Database tables initialized');
   } catch (error) {
