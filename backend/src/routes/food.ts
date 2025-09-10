@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { pool } from '../db/pool.js';
+import { v4 as uuidv4 } from 'uuid';
 
 export const foodRouter = Router();
 
@@ -20,12 +21,13 @@ foodRouter.get('/:catId', async (req, res) => {
 foodRouter.post('/', async (req, res) => {
   try {
     const { catId, timestamp, foodCategory, foodType, brand, amount, unit, portionToGrams, notes } = req.body;
+    const id = uuidv4();
     const result = await pool.query(
       `INSERT INTO food_entries 
-       (cat_id, timestamp, food_category, food_type, brand, amount, unit, portion_to_grams, notes)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+       (id, cat_id, timestamp, food_category, food_type, brand, amount, unit, portion_to_grams, notes)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
        RETURNING *`,
-      [catId, timestamp, foodCategory, foodType, brand, amount, unit, portionToGrams, notes]
+      [id, catId, timestamp, foodCategory, foodType, brand, amount, unit, portionToGrams, notes]
     );
     res.json(result.rows[0]);
   } catch (error) {

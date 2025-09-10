@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { pool } from '../db/pool.js';
+import { v4 as uuidv4 } from 'uuid';
 
 export const sleepRouter = Router();
 
@@ -19,17 +20,18 @@ sleepRouter.get('/:catId', async (req, res) => {
 
 sleepRouter.post('/', async (req, res) => {
   try {
-    const { catId, startTime, endTime, quality, location, customLocation, notes } = req.body;
+    const { catId, startTime, endTime, quality, location, customLocation, notes, photos } = req.body;
+    const id = uuidv4();
     const start = new Date(startTime);
     const end = new Date(endTime);
     const duration = Math.floor((end.getTime() - start.getTime()) / 60000);
     
     const result = await pool.query(
       `INSERT INTO sleep_entries 
-       (cat_id, start_time, end_time, duration, quality, location, custom_location, notes)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+       (id, cat_id, start_time, end_time, duration, quality, location, custom_location, notes, photos)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
        RETURNING *`,
-      [catId, startTime, endTime, duration, quality, location, customLocation, notes]
+      [id, catId, startTime, endTime, duration, quality, location, customLocation, notes, photos || null]
     );
     res.json(result.rows[0]);
   } catch (error) {

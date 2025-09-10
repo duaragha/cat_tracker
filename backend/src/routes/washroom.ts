@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { pool } from '../db/pool.js';
+import { v4 as uuidv4 } from 'uuid';
 
 export const washroomRouter = Router();
 
@@ -20,12 +21,13 @@ washroomRouter.get('/:catId', async (req, res) => {
 washroomRouter.post('/', async (req, res) => {
   try {
     const { catId, timestamp, type, consistency, hasBlood, color, photos, notes } = req.body;
+    const id = uuidv4();
     const result = await pool.query(
       `INSERT INTO washroom_entries 
-       (cat_id, timestamp, type, consistency, has_blood, color, photos, notes)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+       (id, cat_id, timestamp, type, consistency, has_blood, color, photos, notes)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
        RETURNING *`,
-      [catId, timestamp, type, consistency, hasBlood, color, photos, notes]
+      [id, catId, timestamp, type, consistency, hasBlood, color, photos, notes]
     );
     res.json(result.rows[0]);
   } catch (error) {

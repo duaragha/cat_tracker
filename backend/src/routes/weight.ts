@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { pool } from '../db/pool.js';
+import { v4 as uuidv4 } from 'uuid';
 
 export const weightRouter = Router();
 
@@ -20,12 +21,13 @@ weightRouter.get('/:catId', async (req, res) => {
 weightRouter.post('/', async (req, res) => {
   try {
     const { catId, weight, measurementDate, photos, notes } = req.body;
+    const id = uuidv4();
     const result = await pool.query(
       `INSERT INTO weight_entries 
-       (cat_id, weight, measurement_date, photos, notes)
-       VALUES ($1, $2, $3, $4, $5)
+       (id, cat_id, weight, measurement_date, photos, notes)
+       VALUES ($1, $2, $3, $4, $5, $6)
        RETURNING *`,
-      [catId, weight, measurementDate, photos, notes]
+      [id, catId, weight, measurementDate, photos, notes]
     );
     res.json(result.rows[0]);
   } catch (error) {
