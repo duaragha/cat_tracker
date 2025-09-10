@@ -1,12 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ApiService } from '../services/api';
 import type {
-  CatProfile,
   WashroomEntry,
   FoodEntry,
   SleepEntry,
   WeightEntry,
-  PhotoEntry,
 } from '../types';
 
 const CACHE_TIME = 1000 * 60 * 10; // 10 minutes
@@ -134,13 +132,13 @@ export const useAddWashroomEntry = () => {
       
       return { previousEntries };
     },
-    onError: (err, newEntry, context) => {
+    onError: (_, newEntry, context) => {
       // Rollback on error
       if (context?.previousEntries) {
         queryClient.setQueryData(queryKeys.washroom(newEntry.catId), context.previousEntries);
       }
     },
-    onSettled: (data, error, variables) => {
+    onSettled: (_, __, variables) => {
       // Refetch after success or error
       queryClient.invalidateQueries({ queryKey: queryKeys.washroom(variables.catId) });
     },
@@ -162,12 +160,12 @@ export const useAddFoodEntry = () => {
       
       return { previousEntries };
     },
-    onError: (err, newEntry, context) => {
+    onError: (_, newEntry, context) => {
       if (context?.previousEntries) {
         queryClient.setQueryData(queryKeys.food(newEntry.catId), context.previousEntries);
       }
     },
-    onSettled: (data, error, variables) => {
+    onSettled: (_, __, variables) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.food(variables.catId) });
     },
   });
@@ -188,12 +186,12 @@ export const useAddSleepEntry = () => {
       
       return { previousEntries };
     },
-    onError: (err, newEntry, context) => {
+    onError: (_, newEntry, context) => {
       if (context?.previousEntries) {
         queryClient.setQueryData(queryKeys.sleep(newEntry.catId), context.previousEntries);
       }
     },
-    onSettled: (data, error, variables) => {
+    onSettled: (_, __, variables) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.sleep(variables.catId) });
     },
   });
@@ -214,12 +212,12 @@ export const useAddWeightEntry = () => {
       
       return { previousEntries };
     },
-    onError: (err, newEntry, context) => {
+    onError: (_, newEntry, context) => {
       if (context?.previousEntries) {
         queryClient.setQueryData(queryKeys.weight(newEntry.catId), context.previousEntries);
       }
     },
-    onSettled: (data, error, variables) => {
+    onSettled: (_, __, variables) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.weight(variables.catId) });
     },
   });

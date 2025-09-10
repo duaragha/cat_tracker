@@ -48,7 +48,6 @@ import {
   startOfWeek,
   endOfWeek,
   eachDayOfInterval,
-  isSameDay,
   isToday,
   addMonths,
   subMonths,
@@ -285,8 +284,6 @@ const Calendar: React.FC = () => {
 
   // Memoize events transformation with stable sort
   const allEvents = useMemo(() => {
-    const events: CalendarEvent[] = [];
-
     // Pre-allocate arrays to reduce memory allocation
     const transformedEvents = [
       ...washroomEntries.map((entry) => ({

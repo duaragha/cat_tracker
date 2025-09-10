@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import React, { useState, useRef, useMemo, useCallback } from 'react';
 import { Box } from '@chakra-ui/react';
 
 interface VirtualScrollListProps<T> {

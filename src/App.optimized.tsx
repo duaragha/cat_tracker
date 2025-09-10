@@ -1,10 +1,10 @@
+import React, { Component, Suspense, lazy } from 'react';
 import { ChakraProvider } from '@chakra-ui/react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { CatDataProvider } from './contexts/CatDataContext.optimized';
 import Layout from './components/Layout';
 import theme from './theme';
-import { Suspense, lazy } from 'react';
-import { Box, Spinner, Text, VStack } from '@chakra-ui/react';
+import { Box, Spinner, Text, VStack, Button } from '@chakra-ui/react';
 
 // Lazy load all page components for code splitting
 const Dashboard = lazy(() => import('./pages/Dashboard.optimized'));

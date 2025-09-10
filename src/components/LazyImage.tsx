@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Image, Box, Skeleton, ImageProps } from '@chakra-ui/react';
+import { Image, Box, Skeleton, type ImageProps } from '@chakra-ui/react';
 
 interface LazyImageProps extends Omit<ImageProps, 'loading'> {
   src: string;

@@ -241,8 +241,12 @@ const Dashboard = () => {
     // Sort by timestamp and limit total
     return activities
       .sort((a, b) => {
-        const aTime = (a.entry.timestamp || a.entry.startTime).getTime();
-        const bTime = (b.entry.timestamp || b.entry.startTime).getTime();
+        const aTime = 'timestamp' in a.entry 
+          ? a.entry.timestamp.getTime() 
+          : a.entry.startTime.getTime();
+        const bTime = 'timestamp' in b.entry 
+          ? b.entry.timestamp.getTime() 
+          : b.entry.startTime.getTime();
         return bTime - aTime;
       })
       .slice(0, 8); // Show max 8 recent activities

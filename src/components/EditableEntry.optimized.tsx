@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, memo } from 'react';
+import React, { useState, useCallback, memo } from 'react';
 import {
   Box,
   HStack,
@@ -241,7 +241,7 @@ const DisplayComponent = memo(({
   entry: any;
   renderDisplay: (entry: any) => React.ReactNode;
   onEdit: () => void;
-  onDelete: () => void;
+  onDelete: (id: string) => void;
   borderColor: string;
 }) => {
   const handleDelete = useCallback(() => {
@@ -328,7 +328,7 @@ export const EditableEntry: React.FC<EditableEntryProps> = memo(({
       entry={entry}
       renderDisplay={renderDisplay}
       onEdit={handleEdit}
-      onDelete={onDelete}
+      onDelete={() => onDelete(entry.id)}
       borderColor={borderColor}
     />
   );

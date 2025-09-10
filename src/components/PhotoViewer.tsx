@@ -12,7 +12,6 @@ import {
   Text,
   useColorModeValue,
   Flex,
-  Button,
 } from '@chakra-ui/react';
 import {
   FaChevronLeft,

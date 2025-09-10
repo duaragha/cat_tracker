@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Box, Image, Skeleton, Text, AspectRatio } from '@chakra-ui/react';
+import { Box, Image, Skeleton } from '@chakra-ui/react';
 import { FaCamera } from 'react-icons/fa';
 
 interface PhotoThumbnailProps {
