@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import { v4 as uuidv4 } from 'uuid';
 import { initDatabase, getQuery, allQuery, runQuery } from './db/database.js';
+import paginatedRoutes from './routes/paginated.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -32,6 +33,9 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 app.use(express.json({ limit: '10mb' }));
+
+// Use paginated routes for v2 API
+app.use(paginatedRoutes);
 
 // Profile routes
 app.get('/api/profile', async (req, res) => {

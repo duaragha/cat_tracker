@@ -18,7 +18,10 @@ import {
   Flex,
   Avatar
 } from '@chakra-ui/react';
+import { useState } from 'react';
 import { FaUtensils, FaBed, FaWeight, FaCamera, FaToilet } from 'react-icons/fa';
+import { PhotoThumbnailGrid } from '../components/PhotoThumbnailGrid';
+import { PhotoViewer } from '../components/PhotoViewer';
 import { useCatData } from '../contexts/CatDataContext';
 import { format, isToday } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
@@ -35,6 +38,9 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const bgColor = useColorModeValue('white', 'gray.800');
   const borderColor = useColorModeValue('gray.200', 'gray.700');
+  const [photoViewerOpen, setPhotoViewerOpen] = useState(false);
+  const [selectedPhotos, setSelectedPhotos] = useState<string[]>([]);
+  const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(0);
 
   // Calculate today's stats
   const todayWashroom = washroomEntries.filter(entry => 
@@ -239,11 +245,25 @@ const Dashboard = () => {
             <Heading size="md" mb={4}>Recent Activity</Heading>
             <VStack align="stretch" spacing={3}>
               {washroomEntries.slice(0, 3).map((entry) => (
-                <HStack key={entry.id} justify="space-between">
-                  <HStack>
-                    <Icon as={FaToilet} color="blue.500" />
-                    <Text>Washroom visit ({entry.type})</Text>
-                  </HStack>
+                <HStack key={entry.id} justify="space-between" align="start">
+                  <VStack align="start" spacing={1} flex={1}>
+                    <HStack>
+                      <Icon as={FaToilet} color="blue.500" />
+                      <Text>Washroom visit ({entry.type})</Text>
+                    </HStack>
+                    {entry.photos && entry.photos.length > 0 && (
+                      <PhotoThumbnailGrid
+                        photos={entry.photos}
+                        maxVisible={2}
+                        size="xs"
+                        onPhotoClick={(index) => {
+                          setSelectedPhotos(entry.photos!);
+                          setSelectedPhotoIndex(index);
+                          setPhotoViewerOpen(true);
+                        }}
+                      />
+                    )}
+                  </VStack>
                   <Text fontSize="sm" color="gray.600">
                     {format(entry.timestamp, 'h:mm a')}
                   </Text>
@@ -261,11 +281,25 @@ const Dashboard = () => {
                 </HStack>
               ))}
               {sleepEntries.slice(0, 2).map((entry) => (
-                <HStack key={entry.id} justify="space-between">
-                  <HStack>
-                    <Icon as={FaBed} color="purple.500" />
-                    <Text>Sleep - {(entry.duration / 60).toFixed(1)} hours</Text>
-                  </HStack>
+                <HStack key={entry.id} justify="space-between" align="start">
+                  <VStack align="start" spacing={1} flex={1}>
+                    <HStack>
+                      <Icon as={FaBed} color="purple.500" />
+                      <Text>Sleep - {(entry.duration / 60).toFixed(1)} hours</Text>
+                    </HStack>
+                    {entry.photos && entry.photos.length > 0 && (
+                      <PhotoThumbnailGrid
+                        photos={entry.photos}
+                        maxVisible={2}
+                        size="xs"
+                        onPhotoClick={(index) => {
+                          setSelectedPhotos(entry.photos!);
+                          setSelectedPhotoIndex(index);
+                          setPhotoViewerOpen(true);
+                        }}
+                      />
+                    )}
+                  </VStack>
                   <Text fontSize="sm" color="gray.600">
                     {format(entry.startTime, 'h:mm a')}
                   </Text>
@@ -275,6 +309,15 @@ const Dashboard = () => {
           </CardBody>
         </Card>
       </VStack>
+      
+      {/* Photo Viewer Modal */}
+      <PhotoViewer
+        photos={selectedPhotos}
+        initialIndex={selectedPhotoIndex}
+        isOpen={photoViewerOpen}
+        onClose={() => setPhotoViewerOpen(false)}
+        title="Recent Activity Photos"
+      />
     </Container>
   );
 };
