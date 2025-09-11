@@ -47,6 +47,8 @@ import {
   FaUtensils,
   FaExclamationTriangle,
   FaCheckCircle,
+  FaArrowUp,
+  FaArrowDown,
   FaClock,
   FaBrain,
   FaFileDownload,
@@ -1081,8 +1083,9 @@ const Analytics = () => {
                           <Td isNumeric>{comparativeAnalytics.washroom.previous}</Td>
                           <Td isNumeric>
                             <HStack justify="flex-end">
-                              <StatArrow 
-                                type={parseFloat(comparativeAnalytics.washroom.change) >= 0 ? 'increase' : 'decrease'} 
+                              <Icon 
+                                as={parseFloat(comparativeAnalytics.washroom.change) >= 0 ? FaArrowUp : FaArrowDown}
+                                color={parseFloat(comparativeAnalytics.washroom.change) >= 0 ? 'green.500' : 'red.500'}
                               />
                               <Text>{Math.abs(parseFloat(comparativeAnalytics.washroom.change))}%</Text>
                             </HStack>
@@ -1094,8 +1097,9 @@ const Analytics = () => {
                           <Td isNumeric>{comparativeAnalytics.food.previous}</Td>
                           <Td isNumeric>
                             <HStack justify="flex-end">
-                              <StatArrow 
-                                type={parseFloat(comparativeAnalytics.food.change) >= 0 ? 'increase' : 'decrease'} 
+                              <Icon 
+                                as={parseFloat(comparativeAnalytics.food.change) >= 0 ? FaArrowUp : FaArrowDown}
+                                color={parseFloat(comparativeAnalytics.food.change) >= 0 ? 'green.500' : 'red.500'}
                               />
                               <Text>{Math.abs(parseFloat(comparativeAnalytics.food.change))}%</Text>
                             </HStack>
@@ -1107,8 +1111,9 @@ const Analytics = () => {
                           <Td isNumeric>{comparativeAnalytics.sleep.previous}</Td>
                           <Td isNumeric>
                             <HStack justify="flex-end">
-                              <StatArrow 
-                                type={parseFloat(comparativeAnalytics.sleep.change) >= 0 ? 'increase' : 'decrease'} 
+                              <Icon 
+                                as={parseFloat(comparativeAnalytics.sleep.change) >= 0 ? FaArrowUp : FaArrowDown}
+                                color={parseFloat(comparativeAnalytics.sleep.change) >= 0 ? 'green.500' : 'red.500'}
                               />
                               <Text>{Math.abs(parseFloat(comparativeAnalytics.sleep.change))}%</Text>
                             </HStack>
