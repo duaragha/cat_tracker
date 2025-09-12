@@ -7,6 +7,7 @@ import type {
   SleepEntry, 
   WeightEntry, 
   PhotoEntry,
+  TreatEntry,
   CatData 
 } from '../types';
 
@@ -17,16 +18,19 @@ interface CatDataContextType {
   sleepEntries: SleepEntry[];
   weightEntries: WeightEntry[];
   photos: PhotoEntry[];
+  treatEntries: TreatEntry[];
   setCatProfile: (profile: CatProfile) => void;
   addWashroomEntry: (entry: Omit<WashroomEntry, 'id' | 'catId' | 'createdAt'>) => void;
   addFoodEntry: (entry: Omit<FoodEntry, 'id' | 'catId' | 'createdAt'>) => void;
   addSleepEntry: (entry: Omit<SleepEntry, 'id' | 'catId' | 'createdAt' | 'duration'>) => void;
   addWeightEntry: (entry: Omit<WeightEntry, 'id' | 'catId' | 'createdAt'>) => void;
   addPhoto: (photo: Omit<PhotoEntry, 'id' | 'catId' | 'createdAt'>) => void;
+  addTreatEntry: (entry: Omit<TreatEntry, 'id' | 'catId' | 'createdAt'>) => void;
   updateWashroomEntry: (entry: WashroomEntry) => void;
   updateFoodEntry: (entry: FoodEntry) => void;
   updateSleepEntry: (entry: SleepEntry) => void;
   updateWeightEntry: (entry: WeightEntry) => void;
+  updateTreatEntry: (entry: TreatEntry) => void;
   updateEntry: (type: keyof CatData, id: string, data: any) => void;
   deleteEntry: (type: keyof CatData, id: string) => void;
   clearAllData: () => void;
@@ -79,6 +83,7 @@ export const CatDataProvider: React.FC<{ children: ReactNode }> = ({ children })
   const [sleepEntries, setSleepEntries] = useState<SleepEntry[]>([]);
   const [weightEntries, setWeightEntries] = useState<WeightEntry[]>([]);
   const [photos, setPhotos] = useState<PhotoEntry[]>([]);
+  const [treatEntries, setTreatEntries] = useState<TreatEntry[]>([]);
 
   // Load profile on mount
   useEffect(() => {
@@ -114,12 +119,13 @@ export const CatDataProvider: React.FC<{ children: ReactNode }> = ({ children })
   const loadAllData = async (catId: string) => {
     try {
       // Load all data types in parallel
-      const [washroom, food, sleep, weight, photoData] = await Promise.all([
+      const [washroom, food, sleep, weight, photoData, treats] = await Promise.all([
         fetch(`${API_URL}/washroom/${catId}`).then(r => r.json()),
         fetch(`${API_URL}/food/${catId}`).then(r => r.json()),
         fetch(`${API_URL}/sleep/${catId}`).then(r => r.json()),
         fetch(`${API_URL}/weight/${catId}`).then(r => r.json()),
-        fetch(`${API_URL}/photos/${catId}`).then(r => r.json())
+        fetch(`${API_URL}/photos/${catId}`).then(r => r.json()),
+        fetch(`${API_URL}/treats/${catId}`).then(r => r.json()).catch(() => [])
       ]);
 
       // Process washroom entries
@@ -163,6 +169,14 @@ export const CatDataProvider: React.FC<{ children: ReactNode }> = ({ children })
       setPhotos(photoData.map((e: any) => {
         const entry = toCamelCase(e);
         entry.uploadDate = new Date(e.upload_date);
+        entry.createdAt = new Date(e.created_at);
+        return entry;
+      }));
+
+      // Process treat entries
+      setTreatEntries(treats.map((e: any) => {
+        const entry = toCamelCase(e);
+        entry.timestamp = new Date(e.timestamp);
         entry.createdAt = new Date(e.created_at);
         return entry;
       }));
@@ -373,6 +387,37 @@ export const CatDataProvider: React.FC<{ children: ReactNode }> = ({ children })
     }
   };
 
+  const addTreatEntry = async (entry: Omit<TreatEntry, 'id' | 'catId' | 'createdAt'>) => {
+    if (!catProfile?.id) return;
+    
+    try {
+      const res = await fetch(`${API_URL}/treats`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          catId: catProfile.id,
+          timestamp: entry.timestamp.toISOString(),
+          treatType: entry.treatType,
+          brand: entry.brand,
+          quantity: entry.quantity,
+          calories: entry.calories,
+          purpose: entry.purpose,
+          notes: entry.notes
+        })
+      });
+      
+      if (res.ok) {
+        const data = await res.json();
+        const newEntry = toCamelCase(data);
+        newEntry.timestamp = new Date(data.timestamp);
+        newEntry.createdAt = new Date(data.created_at);
+        setTreatEntries(prev => [newEntry, ...prev]);
+      }
+    } catch (error) {
+      console.error('Error adding treat entry:', error);
+    }
+  };
+
   const updateWashroomEntry = async (entry: WashroomEntry) => {
     try {
       const res = await fetch(`${API_URL}/washroom/${entry.id}`, {
@@ -474,6 +519,29 @@ export const CatDataProvider: React.FC<{ children: ReactNode }> = ({ children })
     }
   };
 
+  const updateTreatEntry = async (entry: TreatEntry) => {
+    try {
+      const res = await fetch(`${API_URL}/treats/${entry.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...toSnakeCase(entry),
+          timestamp: entry.timestamp.toISOString()
+        })
+      });
+      
+      if (res.ok) {
+        const data = await res.json();
+        const updatedEntry = toCamelCase(data);
+        updatedEntry.timestamp = new Date(data.timestamp);
+        updatedEntry.createdAt = new Date(data.created_at);
+        setTreatEntries(prev => prev.map(e => e.id === entry.id ? updatedEntry : e));
+      }
+    } catch (error) {
+      console.error('Error updating treat entry:', error);
+    }
+  };
+
   const updateEntry = (type: keyof CatData, _id: string, data: any) => {
     switch (type) {
       case 'washroom':
@@ -487,6 +555,9 @@ export const CatDataProvider: React.FC<{ children: ReactNode }> = ({ children })
         break;
       case 'weight':
         updateWeightEntry(data);
+        break;
+      case 'treats':
+        updateTreatEntry(data);
         break;
     }
   };
@@ -514,6 +585,9 @@ export const CatDataProvider: React.FC<{ children: ReactNode }> = ({ children })
           case 'photos':
             setPhotos(prev => prev.filter(photo => photo.id !== id));
             break;
+          case 'treats':
+            setTreatEntries(prev => prev.filter(entry => entry.id !== id));
+            break;
         }
       }
     } catch (error) {
@@ -530,6 +604,7 @@ export const CatDataProvider: React.FC<{ children: ReactNode }> = ({ children })
     setSleepEntries([]);
     setWeightEntries([]);
     setPhotos([]);
+    setTreatEntries([]);
   };
 
   return (
@@ -541,16 +616,19 @@ export const CatDataProvider: React.FC<{ children: ReactNode }> = ({ children })
         sleepEntries,
         weightEntries,
         photos,
+        treatEntries,
         setCatProfile,
         addWashroomEntry,
         addFoodEntry,
         addSleepEntry,
         addWeightEntry,
         addPhoto,
+        addTreatEntry,
         updateWashroomEntry,
         updateFoodEntry,
         updateSleepEntry,
         updateWeightEntry,
+        updateTreatEntry,
         updateEntry,
         deleteEntry,
         clearAllData

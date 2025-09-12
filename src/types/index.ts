@@ -73,6 +73,19 @@ export interface PhotoEntry {
   createdAt: Date;
 }
 
+export interface TreatEntry {
+  id: string;
+  catId: string;
+  timestamp: Date;
+  treatType: string;
+  brand?: string;
+  quantity: number;
+  calories?: number;
+  purpose?: 'reward' | 'training' | 'medication' | 'dental' | 'just because';
+  notes?: string;
+  createdAt: Date;
+}
+
 export interface CatData {
   profile: CatProfile;
   washroom: WashroomEntry[];
@@ -80,6 +93,7 @@ export interface CatData {
   sleep: SleepEntry[];
   weight: WeightEntry[];
   photos: PhotoEntry[];
+  treats: TreatEntry[];
 }
 
 // Form data types
@@ -118,6 +132,16 @@ export interface WeightFormData {
   weight: number;
   measurementDate: string;
   photos?: string[];
+  notes?: string;
+}
+
+export interface TreatFormData {
+  timestamp: string;
+  treatType: string;
+  brand?: string;
+  quantity: number;
+  calories?: number;
+  purpose?: 'reward' | 'training' | 'medication' | 'dental' | 'just because';
   notes?: string;
 }
 

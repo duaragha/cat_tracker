@@ -12,6 +12,7 @@ const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Calendar = lazy(() => import('./pages/Calendar'));
 const WashroomTracking = lazy(() => import('./pages/WashroomTracking'));
 const FoodTracking = lazy(() => import('./pages/FoodTracking'));
+const TreatTracking = lazy(() => import('./pages/TreatTracking'));
 const SleepTracking = lazy(() => import('./pages/SleepTracking'));
 const WeightTracking = lazy(() => import('./pages/WeightTracking'));
 const PhotoGallery = lazy(() => import('./pages/PhotoGallery'));
@@ -51,6 +52,7 @@ function App() {
                   <Route path="calendar" element={<Calendar />} />
                   <Route path="washroom" element={<WashroomTracking />} />
                   <Route path="food" element={<FoodTracking />} />
+                  <Route path="treats" element={<TreatTracking />} />
                   <Route path="sleep" element={<SleepTracking />} />
                   <Route path="weight" element={<WeightTracking />} />
                   <Route path="photos" element={<PhotoGallery />} />
