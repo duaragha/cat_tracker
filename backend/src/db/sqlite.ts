@@ -108,6 +108,22 @@ export function initSQLiteDB() {
           created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
           FOREIGN KEY (cat_id) REFERENCES cat_profiles(id)
         )
+      `);
+
+      db.run(`
+        CREATE TABLE IF NOT EXISTS treat_entries (
+          id TEXT PRIMARY KEY,
+          cat_id TEXT,
+          timestamp DATETIME NOT NULL,
+          treat_type TEXT NOT NULL,
+          brand TEXT,
+          quantity INTEGER DEFAULT 1,
+          calories REAL,
+          purpose TEXT,
+          notes TEXT,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (cat_id) REFERENCES cat_profiles(id)
+        )
       `, (err) => {
         if (err) {
           reject(err);

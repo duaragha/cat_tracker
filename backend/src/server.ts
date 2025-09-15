@@ -57,6 +57,7 @@ app.delete('/api/profile/:id', async (req, res) => {
     await runQuery('DELETE FROM sleep_entries WHERE cat_id = ?', [id]);
     await runQuery('DELETE FROM weight_entries WHERE cat_id = ?', [id]);
     await runQuery('DELETE FROM photo_entries WHERE cat_id = ?', [id]);
+    await runQuery('DELETE FROM treat_entries WHERE cat_id = ?', [id]);
     // Then delete the profile
     await runQuery('DELETE FROM cat_profiles WHERE id = ?', [id]);
     res.json({ success: true });
@@ -395,6 +396,75 @@ app.put('/api/weight/:id', async (req, res) => {
   }
 });
 
+// Treats routes
+app.get('/api/treats/:catId', async (req, res) => {
+  try {
+    const { catId } = req.params;
+    const entries = await allQuery(
+      'SELECT * FROM treat_entries WHERE cat_id = ? ORDER BY timestamp DESC',
+      [catId]
+    );
+    res.json(entries);
+  } catch (error) {
+    console.error('Error fetching treat entries:', error);
+    res.status(500).json({ error: 'Failed to fetch entries' });
+  }
+});
+
+app.post('/api/treats', async (req, res) => {
+  try {
+    const { catId, timestamp, treatType, brand, quantity, calories, purpose, notes } = req.body;
+    const id = uuidv4();
+    await runQuery(
+      `INSERT INTO treat_entries 
+       (id, cat_id, timestamp, treat_type, brand, quantity, calories, purpose, notes)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [id, catId, timestamp, treatType, brand, quantity || 1, calories, purpose, notes]
+    );
+    const entry = await getQuery('SELECT * FROM treat_entries WHERE id = ?', [id]);
+    res.json(entry);
+  } catch (error) {
+    console.error('Error creating treat entry:', error);
+    res.status(500).json({ error: 'Failed to create entry' });
+  }
+});
+
+app.put('/api/treats/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { timestamp, treatType, treat_type, brand, quantity, calories, purpose, notes } = req.body;
+    
+    // Handle both camelCase and snake_case
+    const actualTreatType = treatType || treat_type;
+    
+    // Build dynamic UPDATE query
+    const updates = [];
+    const values = [];
+    
+    if (timestamp !== undefined) { updates.push('timestamp = ?'); values.push(timestamp); }
+    if (actualTreatType !== undefined) { updates.push('treat_type = ?'); values.push(actualTreatType); }
+    if (brand !== undefined) { updates.push('brand = ?'); values.push(brand); }
+    if (quantity !== undefined) { updates.push('quantity = ?'); values.push(quantity); }
+    if (calories !== undefined) { updates.push('calories = ?'); values.push(calories); }
+    if (purpose !== undefined) { updates.push('purpose = ?'); values.push(purpose); }
+    if (notes !== undefined) { updates.push('notes = ?'); values.push(notes); }
+    
+    if (updates.length > 0) {
+      values.push(id);
+      await runQuery(
+        `UPDATE treat_entries SET ${updates.join(', ')} WHERE id = ?`,
+        values
+      );
+    }
+    
+    const entry = await getQuery('SELECT * FROM treat_entries WHERE id = ?', [id]);
+    res.json(entry);
+  } catch (error) {
+    console.error('Error updating treat entry:', error);
+    res.status(500).json({ error: 'Failed to update entry' });
+  }
+});
+
 // Photos routes
 app.get('/api/photos/:catId', async (req, res) => {
   try {
@@ -437,7 +507,8 @@ app.delete('/api/:type/:id', async (req, res) => {
       food: 'food_entries',
       sleep: 'sleep_entries',
       weight: 'weight_entries',
-      photos: 'photo_entries'
+      photos: 'photo_entries',
+      treats: 'treat_entries'
     };
     
     if (tableMap[type]) {
@@ -476,6 +547,7 @@ app.get('/api/fix-database', async (req, res) => {
     await pool.query('DROP TABLE IF EXISTS sleep_entries CASCADE');
     await pool.query('DROP TABLE IF EXISTS food_entries CASCADE');
     await pool.query('DROP TABLE IF EXISTS washroom_entries CASCADE');
+    await pool.query('DROP TABLE IF EXISTS treat_entries CASCADE');
     await pool.query('DROP TABLE IF EXISTS cat_profiles CASCADE');
     
     // Recreate with correct schema
@@ -560,6 +632,21 @@ app.get('/api/fix-database', async (req, res) => {
         week INTEGER NOT NULL,
         year INTEGER NOT NULL,
         caption VARCHAR(500),
+        notes TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    await pool.query(`
+      CREATE TABLE treat_entries (
+        id TEXT PRIMARY KEY,
+        cat_id TEXT REFERENCES cat_profiles(id) ON DELETE CASCADE,
+        timestamp TIMESTAMP NOT NULL,
+        treat_type VARCHAR(255) NOT NULL,
+        brand VARCHAR(255),
+        quantity INTEGER DEFAULT 1,
+        calories DECIMAL(5, 2),
+        purpose VARCHAR(50),
         notes TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )

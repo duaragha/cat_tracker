@@ -100,6 +100,21 @@ export async function initDB() {
       )
     `);
 
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS treat_entries (
+        id TEXT PRIMARY KEY,
+        cat_id TEXT REFERENCES cat_profiles(id) ON DELETE CASCADE,
+        timestamp TIMESTAMP NOT NULL,
+        treat_type VARCHAR(255) NOT NULL,
+        brand VARCHAR(255),
+        quantity INTEGER DEFAULT 1,
+        calories DECIMAL(5, 2),
+        purpose VARCHAR(50),
+        notes TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
     // Add photos column to sleep_entries if it doesn't exist (for existing deployments)
     try {
       await pool.query(`
