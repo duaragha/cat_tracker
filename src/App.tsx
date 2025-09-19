@@ -1,15 +1,14 @@
+import React, { Component, Suspense, lazy } from 'react';
 import { ChakraProvider } from '@chakra-ui/react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { CatDataProvider } from './contexts/CatDataContext';
-import { lazy, Suspense } from 'react';
+import { CatDataProvider } from './contexts/CatDataContext.optimized';
 import Layout from './components/Layout';
-import { Spinner, Center } from '@chakra-ui/react';
 import theme from './theme';
+import { Box, Spinner, Text, VStack, Button } from '@chakra-ui/react';
 
-// Lazy load pages for code splitting
-const Dashboard = lazy(() => import('./pages/Dashboard'));
-const Calendar = lazy(() => import('./pages/Calendar'));
+// Lazy load all page components for code splitting
+const Dashboard = lazy(() => import('./pages/Dashboard.optimized'));
+const Calendar = lazy(() => import('./pages/Calendar.optimized'));
 const WashroomTracking = lazy(() => import('./pages/WashroomTracking'));
 const FoodTracking = lazy(() => import('./pages/FoodTracking'));
 const TreatTracking = lazy(() => import('./pages/TreatTracking'));
@@ -20,52 +19,160 @@ const Analytics = lazy(() => import('./pages/Analytics'));
 const Profile = lazy(() => import('./pages/Profile'));
 const Export = lazy(() => import('./pages/Export'));
 
-// Create a client
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 1000 * 60 * 2, // 2 minutes
-      gcTime: 1000 * 60 * 10, // 10 minutes
-      refetchOnWindowFocus: false,
-      retry: 1,
-    },
-  },
-});
-
-// Loading component
+// Loading component for suspense
 const PageLoader = () => (
-  <Center h="100vh">
+  <VStack spacing={4} justify="center" align="center" minH="400px">
     <Spinner size="xl" color="blue.500" thickness="4px" />
-  </Center>
+    <Text color="gray.600">Loading...</Text>
+  </VStack>
 );
+
+// Error boundary component
+class ErrorBoundary extends Component<
+  { children: React.ReactNode },
+  { hasError: boolean; error?: Error }
+> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error('Error caught by boundary:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <Box p={8} textAlign="center">
+          <VStack spacing={4}>
+            <Text fontSize="xl" fontWeight="bold" color="red.500">
+              Something went wrong
+            </Text>
+            <Text color="gray.600">
+              Please refresh the page or try again later.
+            </Text>
+            <Button
+              colorScheme="blue"
+              onClick={() => this.setState({ hasError: false })}
+            >
+              Try Again
+            </Button>
+          </VStack>
+        </Box>
+      );
+    }
+
+    return this.props.children;
+  }
+}
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <ChakraProvider theme={theme}>
+    <ChakraProvider theme={theme}>
+      <ErrorBoundary>
         <CatDataProvider>
           <Router>
-            <Suspense fallback={<PageLoader />}>
-              <Routes>
-                <Route path="/" element={<Layout />}>
-                  <Route index element={<Dashboard />} />
-                  <Route path="calendar" element={<Calendar />} />
-                  <Route path="washroom" element={<WashroomTracking />} />
-                  <Route path="food" element={<FoodTracking />} />
-                  <Route path="treats" element={<TreatTracking />} />
-                  <Route path="sleep" element={<SleepTracking />} />
-                  <Route path="weight" element={<WeightTracking />} />
-                  <Route path="photos" element={<PhotoGallery />} />
-                  <Route path="analytics" element={<Analytics />} />
-                  <Route path="profile" element={<Profile />} />
-                  <Route path="export" element={<Export />} />
-                </Route>
-              </Routes>
-            </Suspense>
+            <Routes>
+              <Route path="/" element={<Layout />}>
+                <Route
+                  index
+                  element={
+                    <Suspense fallback={<PageLoader />}>
+                      <Dashboard />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="calendar"
+                  element={
+                    <Suspense fallback={<PageLoader />}>
+                      <Calendar />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="washroom"
+                  element={
+                    <Suspense fallback={<PageLoader />}>
+                      <WashroomTracking />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="food"
+                  element={
+                    <Suspense fallback={<PageLoader />}>
+                      <FoodTracking />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="treats"
+                  element={
+                    <Suspense fallback={<PageLoader />}>
+                      <TreatTracking />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="sleep"
+                  element={
+                    <Suspense fallback={<PageLoader />}>
+                      <SleepTracking />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="weight"
+                  element={
+                    <Suspense fallback={<PageLoader />}>
+                      <WeightTracking />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="photos"
+                  element={
+                    <Suspense fallback={<PageLoader />}>
+                      <PhotoGallery />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="analytics"
+                  element={
+                    <Suspense fallback={<PageLoader />}>
+                      <Analytics />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="profile"
+                  element={
+                    <Suspense fallback={<PageLoader />}>
+                      <Profile />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="export"
+                  element={
+                    <Suspense fallback={<PageLoader />}>
+                      <Export />
+                    </Suspense>
+                  }
+                />
+              </Route>
+            </Routes>
           </Router>
         </CatDataProvider>
-      </ChakraProvider>
-    </QueryClientProvider>
+      </ErrorBoundary>
+    </ChakraProvider>
   );
 }
 

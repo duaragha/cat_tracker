@@ -1,13 +1,14 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import type { ReactNode } from 'react';
-import type { 
-  CatProfile, 
-  WashroomEntry, 
-  FoodEntry, 
-  SleepEntry, 
-  WeightEntry, 
+import type {
+  CatProfile,
+  WashroomEntry,
+  FoodEntry,
+  SleepEntry,
+  WeightEntry,
   PhotoEntry,
-  CatData 
+  TreatEntry,
+  CatData
 } from '../types';
 
 interface CatDataContextType {
@@ -17,6 +18,7 @@ interface CatDataContextType {
   sleepEntries: SleepEntry[];
   weightEntries: WeightEntry[];
   photos: PhotoEntry[];
+  treatEntries: TreatEntry[];
   isLoading: boolean;
   error: string | null;
   setCatProfile: (profile: CatProfile) => Promise<void>;
@@ -25,6 +27,7 @@ interface CatDataContextType {
   addSleepEntry: (entry: Omit<SleepEntry, 'id' | 'catId' | 'createdAt' | 'duration'>) => Promise<void>;
   addWeightEntry: (entry: Omit<WeightEntry, 'id' | 'catId' | 'createdAt'>) => Promise<void>;
   addPhoto: (photo: Omit<PhotoEntry, 'id' | 'catId' | 'createdAt'>) => Promise<void>;
+  addTreatEntry: (entry: Omit<TreatEntry, 'id' | 'catId' | 'createdAt'>) => Promise<void>;
   updateEntry: (type: keyof CatData, id: string, data: any) => Promise<void>;
   deleteEntry: (type: keyof CatData, id: string) => Promise<void>;
   clearAllData: () => void;
@@ -130,6 +133,7 @@ export const CatDataProvider: React.FC<{ children: ReactNode }> = ({ children })
   const [sleepEntries, setSleepEntries] = useState<SleepEntry[]>([]);
   const [weightEntries, setWeightEntries] = useState<WeightEntry[]>([]);
   const [photos, setPhotos] = useState<PhotoEntry[]>([]);
+  const [treatEntries, setTreatEntries] = useState<TreatEntry[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -167,12 +171,13 @@ export const CatDataProvider: React.FC<{ children: ReactNode }> = ({ children })
     
     try {
       // Load all data types in parallel with individual error handling
-      const [washroom, food, sleep, weight, photoData] = await Promise.allSettled([
+      const [washroom, food, sleep, weight, photoData, treats] = await Promise.allSettled([
         fetchWithCache(`${API_URL}/washroom/${catId}`),
         fetchWithCache(`${API_URL}/food/${catId}`),
         fetchWithCache(`${API_URL}/sleep/${catId}`),
         fetchWithCache(`${API_URL}/weight/${catId}`),
-        fetchWithCache(`${API_URL}/photos/${catId}`)
+        fetchWithCache(`${API_URL}/photos/${catId}`),
+        fetchWithCache(`${API_URL}/treats/${catId}`)
       ]);
 
       // Process washroom entries with error handling
@@ -231,6 +236,17 @@ export const CatDataProvider: React.FC<{ children: ReactNode }> = ({ children })
           return entry;
         });
         setPhotos(processedPhotos);
+      }
+
+      // Process treat entries with error handling
+      if (treats.status === 'fulfilled') {
+        const processedTreats = treats.value.map((e: any) => {
+          const entry = toCamelCase(e);
+          entry.timestamp = new Date(e.timestamp);
+          entry.createdAt = new Date(e.created_at);
+          return entry;
+        });
+        setTreatEntries(processedTreats);
       }
 
     } catch (error) {
@@ -491,6 +507,45 @@ export const CatDataProvider: React.FC<{ children: ReactNode }> = ({ children })
     }
   }, [catProfile?.id, handleError]);
 
+  const addTreatEntry = useCallback(async (entry: Omit<TreatEntry, 'id' | 'catId' | 'createdAt'>) => {
+    if (!catProfile?.id) throw new Error('No cat profile available');
+
+    const optimisticEntry = {
+      id: `temp-${Date.now()}`,
+      catId: catProfile.id,
+      createdAt: new Date(),
+      ...entry
+    } as TreatEntry;
+
+    setTreatEntries(prev => optimizedArrayUpdate(prev, optimisticEntry, 'add'));
+
+    try {
+      const data = await fetchWithCache(`${API_URL}/treats`, {
+        method: 'POST',
+        body: JSON.stringify({
+          catId: catProfile.id,
+          timestamp: entry.timestamp.toISOString(),
+          treatType: entry.treatType,
+          brand: entry.brand,
+          quantity: entry.quantity,
+          calories: entry.calories,
+          purpose: entry.purpose,
+          notes: entry.notes
+        })
+      });
+
+      const newEntry = toCamelCase(data);
+      newEntry.timestamp = new Date(data.timestamp);
+      newEntry.createdAt = new Date(data.created_at);
+
+      setTreatEntries(prev => prev.map(e => e.id === optimisticEntry.id ? newEntry : e));
+    } catch (error) {
+      setTreatEntries(prev => optimizedArrayUpdate(prev, optimisticEntry, 'delete'));
+      handleError(error, 'adding treat entry');
+      throw error;
+    }
+  }, [catProfile?.id, handleError]);
+
   // Unified update method
   const updateEntry = useCallback(async (type: keyof CatData, id: string, data: any) => {
     setError(null);
@@ -536,6 +591,14 @@ export const CatDataProvider: React.FC<{ children: ReactNode }> = ({ children })
           };
           updateState = setWeightEntries;
           break;
+        case 'treats':
+          apiEndpoint = `${API_URL}/treats/${id}`;
+          processedData = {
+            ...toSnakeCase(data),
+            timestamp: data.timestamp.toISOString()
+          };
+          updateState = setTreatEntries;
+          break;
         default:
           throw new Error(`Update not implemented for type: ${type}`);
       }
@@ -566,6 +629,10 @@ export const CatDataProvider: React.FC<{ children: ReactNode }> = ({ children })
         case 'weight':
           const [year, month, day] = response.measurement_date.split('T')[0].split('-').map(Number);
           updatedEntry.measurementDate = new Date(year, month - 1, day, 12, 0, 0);
+          updatedEntry.createdAt = new Date(response.created_at);
+          break;
+        case 'treats':
+          updatedEntry.timestamp = new Date(response.timestamp);
           updatedEntry.createdAt = new Date(response.created_at);
           break;
       }
@@ -602,6 +669,9 @@ export const CatDataProvider: React.FC<{ children: ReactNode }> = ({ children })
         case 'photos':
           setPhotos(prev => prev.filter(photo => photo.id !== id));
           break;
+        case 'treats':
+          setTreatEntries(prev => prev.filter(entry => entry.id !== id));
+          break;
       }
     } catch (error) {
       handleError(error, `deleting ${type} entry`);
@@ -616,6 +686,7 @@ export const CatDataProvider: React.FC<{ children: ReactNode }> = ({ children })
     setSleepEntries([]);
     setWeightEntries([]);
     setPhotos([]);
+    setTreatEntries([]);
     setError(null);
   }, []);
 
@@ -635,6 +706,7 @@ export const CatDataProvider: React.FC<{ children: ReactNode }> = ({ children })
     sleepEntries,
     weightEntries,
     photos,
+    treatEntries,
     isLoading,
     error,
     setCatProfile,
@@ -643,6 +715,7 @@ export const CatDataProvider: React.FC<{ children: ReactNode }> = ({ children })
     addSleepEntry,
     addWeightEntry,
     addPhoto,
+    addTreatEntry,
     updateEntry,
     deleteEntry,
     clearAllData,
@@ -654,6 +727,7 @@ export const CatDataProvider: React.FC<{ children: ReactNode }> = ({ children })
     sleepEntries,
     weightEntries,
     photos,
+    treatEntries,
     isLoading,
     error,
     setCatProfile,
@@ -662,6 +736,7 @@ export const CatDataProvider: React.FC<{ children: ReactNode }> = ({ children })
     addSleepEntry,
     addWeightEntry,
     addPhoto,
+    addTreatEntry,
     updateEntry,
     deleteEntry,
     clearAllData,
