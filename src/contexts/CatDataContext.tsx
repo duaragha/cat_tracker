@@ -144,7 +144,7 @@ export const CatDataProvider: React.FC<{ children: ReactNode }> = ({ children })
     setIsLoading(false);
   }, []);
 
-  // Load profile with error handling
+  // Load profile with error handling and localStorage fallback
   const loadProfile = useCallback(async () => {
     try {
       const data = await fetchWithCache(`${API_URL}/profile`);
@@ -159,6 +159,23 @@ export const CatDataProvider: React.FC<{ children: ReactNode }> = ({ children })
       }
       return null;
     } catch (error) {
+      // Fallback to localStorage for development
+      console.log('API not available, checking localStorage...');
+      const localProfile = localStorage.getItem('cat-tracker-profile');
+      if (localProfile) {
+        try {
+          const profile = JSON.parse(localProfile);
+          profile.birthDate = profile.birthDate ? new Date(profile.birthDate) : undefined;
+          profile.gotchaDate = profile.gotchaDate ? new Date(profile.gotchaDate) : undefined;
+          profile.createdAt = new Date(profile.createdAt);
+          profile.updatedAt = new Date(profile.updatedAt);
+          setCatProfileState(profile);
+          console.log('✅ Loaded profile from localStorage');
+          return profile;
+        } catch (parseError) {
+          console.error('Failed to parse localStorage profile:', parseError);
+        }
+      }
       handleError(error, 'loading profile');
       return null;
     }
@@ -250,7 +267,68 @@ export const CatDataProvider: React.FC<{ children: ReactNode }> = ({ children })
       }
 
     } catch (error) {
-      handleError(error, 'loading data');
+      // Fallback to localStorage for development
+      console.log('API not available for data, checking localStorage...');
+      const localData = localStorage.getItem('cat-tracker-data');
+      if (localData) {
+        try {
+          const data = JSON.parse(localData);
+
+          // Process localStorage data
+          if (data.washroomEntries) {
+            const processedWashroom = data.washroomEntries.map((e: any) => ({
+              ...e,
+              timestamp: new Date(e.timestamp),
+              createdAt: new Date(e.createdAt)
+            }));
+            setWashroomEntries(processedWashroom);
+          }
+
+          if (data.foodEntries) {
+            const processedFood = data.foodEntries.map((e: any) => ({
+              ...e,
+              timestamp: new Date(e.timestamp),
+              createdAt: new Date(e.createdAt)
+            }));
+            setFoodEntries(processedFood);
+          }
+
+          if (data.sleepEntries) {
+            const processedSleep = data.sleepEntries.map((e: any) => ({
+              ...e,
+              startTime: new Date(e.startTime),
+              endTime: new Date(e.endTime),
+              createdAt: new Date(e.createdAt)
+            }));
+            setSleepEntries(processedSleep);
+          }
+
+          if (data.weightEntries) {
+            const processedWeight = data.weightEntries.map((e: any) => ({
+              ...e,
+              measurementDate: new Date(e.measurementDate),
+              createdAt: new Date(e.createdAt)
+            }));
+            setWeightEntries(processedWeight);
+          }
+
+          if (data.treatEntries) {
+            const processedTreats = data.treatEntries.map((e: any) => ({
+              ...e,
+              timestamp: new Date(e.timestamp),
+              createdAt: new Date(e.createdAt)
+            }));
+            setTreatEntries(processedTreats);
+          }
+
+          console.log('✅ Loaded data from localStorage');
+        } catch (parseError) {
+          console.error('Failed to parse localStorage data:', parseError);
+          handleError(error, 'loading data');
+        }
+      } else {
+        handleError(error, 'loading data');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -688,6 +766,9 @@ export const CatDataProvider: React.FC<{ children: ReactNode }> = ({ children })
     setPhotos([]);
     setTreatEntries([]);
     setError(null);
+    // Also clear localStorage
+    localStorage.removeItem('cat-tracker-profile');
+    localStorage.removeItem('cat-tracker-data');
   }, []);
 
   const refreshData = useCallback(async () => {

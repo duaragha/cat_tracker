@@ -68,6 +68,7 @@ const CATEGORY_COLORS = {
   food: { bg: 'green.100', color: 'green.600', icon: FaUtensils },
   sleep: { bg: 'purple.100', color: 'purple.600', icon: FaBed },
   weight: { bg: 'blue.100', color: 'blue.600', icon: FaWeight },
+  treats: { bg: 'orange.100', color: 'orange.600', icon: FaTint },
   profile: { bg: 'yellow.100', color: 'yellow.600', icon: FaUser },
 };
 
@@ -87,7 +88,7 @@ const Calendar: React.FC = () => {
   const todayBg = useColorModeValue('blue.50', 'blue.900');
   const hoverBg = useColorModeValue('gray.50', 'gray.700');
 
-  const { washroomEntries, foodEntries, sleepEntries, weightEntries, updateEntry, deleteEntry } = useCatData();
+  const { washroomEntries, foodEntries, sleepEntries, weightEntries, treatEntries, updateEntry, deleteEntry } = useCatData();
 
   // Aggregate all events for the calendar
   const allEvents = useMemo(() => {
@@ -153,8 +154,21 @@ const Calendar: React.FC = () => {
       });
     });
 
+    // Add treat events
+    treatEntries.forEach((entry) => {
+      events.push({
+        id: entry.id,
+        date: entry.timestamp,
+        category: 'treats',
+        title: `${entry.treatType} - ${entry.quantity}`,
+        description: `${entry.brand || 'Treats'}${entry.calories ? ` (${entry.calories} cal)` : ''}`,
+        data: entry,
+        color: CATEGORY_COLORS.treats.color,
+      });
+    });
+
     return events.sort((a, b) => b.date.getTime() - a.date.getTime());
-  }, [washroomEntries, foodEntries, sleepEntries, weightEntries]);
+  }, [washroomEntries, foodEntries, sleepEntries, weightEntries, treatEntries]);
 
   // Calculate monthly statistics
   const monthlyStats = useMemo(() => {

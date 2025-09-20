@@ -1,11 +1,11 @@
-import { 
-  Box, 
-  Container, 
-  Grid, 
-  Heading, 
-  Stat, 
-  StatLabel, 
-  StatNumber, 
+import {
+  Box,
+  Container,
+  Grid,
+  Heading,
+  Stat,
+  StatLabel,
+  StatNumber,
   StatHelpText,
   Card,
   CardBody,
@@ -16,31 +16,96 @@ import {
   useColorModeValue,
   Button,
   Flex,
-  Avatar
+  Avatar,
+  useToast,
+  Alert,
+  AlertIcon,
+  AlertTitle,
+  AlertDescription,
+  CloseButton
 } from '@chakra-ui/react';
 import { useState } from 'react';
-import { FaUtensils, FaBed, FaWeight, FaCamera, FaToilet } from 'react-icons/fa';
+import { FaUtensils, FaBed, FaWeight, FaCamera, FaToilet, FaDatabase, FaCog } from 'react-icons/fa';
 import { PhotoThumbnailGrid } from '../components/PhotoThumbnailGrid';
 import { PhotoViewer } from '../components/PhotoViewer';
 import { useCatData } from '../contexts/CatDataContext';
+import { useTestData } from '../hooks/useTestData';
+import { useMockData } from '../hooks/useMockData';
 import { format, isToday } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 
 const Dashboard = () => {
-  const { 
-    catProfile, 
-    washroomEntries, 
-    foodEntries, 
-    sleepEntries, 
-    weightEntries
+  const {
+    catProfile,
+    washroomEntries,
+    foodEntries,
+    sleepEntries,
+    weightEntries,
+    clearAllData
   } = useCatData();
-  
+
   const navigate = useNavigate();
+  const toast = useToast();
+  const { generateTestData } = useTestData();
+  const { generateMockData, clearMockData } = useMockData();
   const bgColor = useColorModeValue('white', 'gray.800');
   const borderColor = useColorModeValue('gray.200', 'gray.700');
   const [photoViewerOpen, setPhotoViewerOpen] = useState(false);
   const [selectedPhotos, setSelectedPhotos] = useState<string[]>([]);
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(0);
+  const [showDevPanel, setShowDevPanel] = useState(import.meta.env.DEV);
+  const [isGeneratingData, setIsGeneratingData] = useState(false);
+
+  // Development functions
+  const handleGenerateTestData = async () => {
+    setIsGeneratingData(true);
+    try {
+      console.log('Generating mock data for development...');
+      const mockResult = await generateMockData();
+
+      if (mockResult) {
+        toast({
+          title: 'Test data generated!',
+          description: '7 days of sample data has been created for testing',
+          status: 'success',
+          duration: 3000,
+          isClosable: true,
+        });
+
+        // Force reload to show the new data
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000);
+      } else {
+        throw new Error('Failed to generate mock data');
+      }
+    } catch (error) {
+      console.error('Error generating test data:', error);
+      toast({
+        title: 'Failed to generate test data',
+        description: String(error),
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
+    } finally {
+      setIsGeneratingData(false);
+    }
+  };
+
+  const handleClearAllData = () => {
+    clearAllData();
+    clearMockData();
+    toast({
+      title: 'All data cleared',
+      description: 'All cat data has been removed',
+      status: 'info',
+      duration: 3000,
+      isClosable: true,
+    });
+    // Reload to reflect changes
+    setTimeout(() => window.location.reload(), 1000);
+  };
 
   // Calculate today's stats
   const todayWashroom = washroomEntries.filter(entry => 
@@ -116,15 +181,50 @@ const Dashboard = () => {
     return (
       <Container maxW="container.xl" py={8}>
         <VStack spacing={8}>
+          {showDevPanel && (
+            <Alert status="info" borderRadius="md">
+              <AlertIcon />
+              <Box>
+                <AlertTitle>Development Mode</AlertTitle>
+                <AlertDescription>
+                  Quick setup for testing - generate sample data instead of manual entry
+                </AlertDescription>
+              </Box>
+              <CloseButton
+                position="absolute"
+                right="8px"
+                top="8px"
+                onClick={() => setShowDevPanel(false)}
+              />
+            </Alert>
+          )}
+
           <Heading>Welcome to Cat Tracker!</Heading>
           <Text fontSize="lg">Start by setting up your cat's profile</Text>
-          <Button 
-            colorScheme="blue" 
-            size="lg"
-            onClick={() => navigate('/profile')}
-          >
-            Set Up Cat Profile
-          </Button>
+
+          <VStack spacing={4}>
+            <Button
+              colorScheme="blue"
+              size="lg"
+              onClick={() => navigate('/profile')}
+            >
+              Set Up Cat Profile
+            </Button>
+
+            {showDevPanel && (
+              <Button
+                leftIcon={<FaDatabase />}
+                colorScheme="green"
+                variant="outline"
+                size="lg"
+                onClick={handleGenerateTestData}
+                isLoading={isGeneratingData}
+                loadingText="Generating..."
+              >
+                Generate Test Data (Dev)
+              </Button>
+            )}
+          </VStack>
         </VStack>
       </Container>
     );
@@ -308,8 +408,50 @@ const Dashboard = () => {
             </VStack>
           </CardBody>
         </Card>
+
+        {/* Development Panel */}
+        {showDevPanel && (
+          <Card bg={bgColor} borderColor="orange.200" borderWidth={2}>
+            <CardBody>
+              <VStack spacing={4} align="stretch">
+                <HStack justify="space-between">
+                  <HStack>
+                    <Icon as={FaCog} color="orange.500" />
+                    <Heading size="md" color="orange.500">Development Tools</Heading>
+                  </HStack>
+                  <CloseButton onClick={() => setShowDevPanel(false)} />
+                </HStack>
+
+                <Text fontSize="sm" color="gray.600">
+                  Quick tools for testing and development. Only visible in dev mode.
+                </Text>
+
+                <Flex gap={3} wrap="wrap">
+                  <Button
+                    leftIcon={<FaDatabase />}
+                    colorScheme="green"
+                    variant="outline"
+                    onClick={handleGenerateTestData}
+                    isLoading={isGeneratingData}
+                    loadingText="Generating..."
+                  >
+                    Generate Test Data
+                  </Button>
+
+                  <Button
+                    colorScheme="red"
+                    variant="outline"
+                    onClick={handleClearAllData}
+                  >
+                    Clear All Data
+                  </Button>
+                </Flex>
+              </VStack>
+            </CardBody>
+          </Card>
+        )}
       </VStack>
-      
+
       {/* Photo Viewer Modal */}
       <PhotoViewer
         photos={selectedPhotos}
