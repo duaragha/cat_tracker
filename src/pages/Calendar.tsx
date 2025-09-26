@@ -223,9 +223,23 @@ const Calendar: React.FC = () => {
     };
   }, [currentDate, washroomEntries, foodEntries, sleepEntries, weightEntries]);
 
-  // Get events for a specific date
+  // Memoize events by date for better performance (avoids filtering 42 times per render)
+  const eventsByDate = useMemo(() => {
+    const eventsMap = new Map<string, CalendarEvent[]>();
+    allEvents.forEach((event) => {
+      const dateKey = format(event.date, 'yyyy-MM-dd');
+      if (!eventsMap.has(dateKey)) {
+        eventsMap.set(dateKey, []);
+      }
+      eventsMap.get(dateKey)!.push(event);
+    });
+    return eventsMap;
+  }, [allEvents]);
+
+  // Optimized function to get events for a specific date
   const getEventsForDate = (date: Date) => {
-    return allEvents.filter((event) => isSameDay(event.date, date));
+    const dateKey = format(date, 'yyyy-MM-dd');
+    return eventsByDate.get(dateKey) || [];
   };
 
   // Get calendar days for month view
@@ -311,23 +325,27 @@ const Calendar: React.FC = () => {
     );
   };
 
-  const renderListView = () => {
+  // Memoize month events for list view to avoid expensive filtering on every render
+  const monthEventsByDate = useMemo(() => {
     const monthStart = startOfMonth(currentDate);
     const monthEnd = endOfMonth(currentDate);
-    const monthEvents = allEvents.filter(
-      (event) => event.date >= monthStart && event.date <= monthEnd
-    );
+    const result: Record<string, CalendarEvent[]> = {};
 
-    const eventsByDate = monthEvents.reduce((acc, event) => {
-      const dateKey = format(event.date, 'yyyy-MM-dd');
-      if (!acc[dateKey]) acc[dateKey] = [];
-      acc[dateKey].push(event);
-      return acc;
-    }, {} as Record<string, CalendarEvent[]>);
+    // Use the already memoized eventsByDate map for efficiency
+    eventsByDate.forEach((events, dateKey) => {
+      const eventDate = new Date(dateKey);
+      if (eventDate >= monthStart && eventDate <= monthEnd) {
+        result[dateKey] = events;
+      }
+    });
 
+    return result;
+  }, [eventsByDate, currentDate]);
+
+  const renderListView = () => {
     return (
       <VStack align="stretch" spacing={4}>
-        {Object.entries(eventsByDate)
+        {Object.entries(monthEventsByDate)
           .sort(([a], [b]) => b.localeCompare(a))
           .map(([dateKey, events]) => (
             <Card key={dateKey} bg={bgColor} borderColor={borderColor} borderWidth={1}>

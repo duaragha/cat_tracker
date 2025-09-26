@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import compression from 'compression';
 import { v4 as uuidv4 } from 'uuid';
 import { initDatabase, getQuery, allQuery, runQuery } from './db/database.js';
 import paginatedRoutes from './routes/paginated.js';
@@ -32,6 +33,7 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
+app.use(compression()); // Compress all responses for better mobile performance
 app.use(express.json({ limit: '10mb' }));
 
 // Use paginated routes for v2 API

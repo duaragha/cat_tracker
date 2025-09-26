@@ -185,77 +185,78 @@ export const CatDataProvider: React.FC<{ children: ReactNode }> = ({ children })
   const loadAllData = useCallback(async (catId: string) => {
     setIsLoading(true);
     setError(null);
-    
+
     try {
-      // Load all data types in parallel with individual error handling
-      const [washroom, food, sleep, weight, photoData, treats] = await Promise.allSettled([
-        fetchWithCache(`${API_URL}/washroom/${catId}`),
-        fetchWithCache(`${API_URL}/food/${catId}`),
-        fetchWithCache(`${API_URL}/sleep/${catId}`),
-        fetchWithCache(`${API_URL}/weight/${catId}`),
-        fetchWithCache(`${API_URL}/photos/${catId}`),
-        fetchWithCache(`${API_URL}/treats/${catId}`)
+      // Use batch endpoint for major performance improvement (6 requests → 2 requests)
+      const [batchData, treats] = await Promise.allSettled([
+        fetchWithCache(`${API_URL}/v2/batch/${catId}?limit=50`),
+        fetchWithCache(`${API_URL}/treats/${catId}`) // Treats endpoint doesn't have v2 yet
       ]);
 
-      // Process washroom entries with error handling
-      if (washroom.status === 'fulfilled') {
-        const processedWashroom = washroom.value.map((e: any) => {
-          const entry = toCamelCase(e);
-          entry.timestamp = new Date(e.timestamp);
-          entry.createdAt = new Date(e.created_at);
-          entry.hasBlood = e.has_blood;
-          return entry;
-        });
-        setWashroomEntries(processedWashroom);
+      // Process batch data response with error handling
+      if (batchData.status === 'fulfilled') {
+        const batch = batchData.value;
+
+        // Process washroom entries from batch
+        if (batch.washroom) {
+          const processedWashroom = batch.washroom.map((e: any) => {
+            const entry = toCamelCase(e);
+            entry.timestamp = new Date(e.timestamp);
+            entry.createdAt = new Date(e.created_at);
+            entry.hasBlood = e.has_blood;
+            return entry;
+          });
+          setWashroomEntries(processedWashroom);
+        }
+
+        // Process food entries from batch
+        if (batch.food) {
+          const processedFood = batch.food.map((e: any) => {
+            const entry = toCamelCase(e);
+            entry.timestamp = new Date(e.timestamp);
+            entry.createdAt = new Date(e.created_at);
+            return entry;
+          });
+          setFoodEntries(processedFood);
+        }
+
+        // Process sleep entries from batch
+        if (batch.sleep) {
+          const processedSleep = batch.sleep.map((e: any) => {
+            const entry = toCamelCase(e);
+            entry.startTime = new Date(e.start_time);
+            entry.endTime = new Date(e.end_time);
+            entry.createdAt = new Date(e.created_at);
+            return entry;
+          });
+          setSleepEntries(processedSleep);
+        }
+
+        // Process weight entries from batch
+        if (batch.weight) {
+          const processedWeight = batch.weight.map((e: any) => {
+            const entry = toCamelCase(e);
+            const [year, month, day] = e.measurement_date.split('T')[0].split('-').map(Number);
+            entry.measurementDate = new Date(year, month - 1, day, 12, 0, 0);
+            entry.createdAt = new Date(e.created_at);
+            return entry;
+          });
+          setWeightEntries(processedWeight);
+        }
+
+        // Process photos from batch
+        if (batch.photos) {
+          const processedPhotos = batch.photos.map((e: any) => {
+            const entry = toCamelCase(e);
+            entry.uploadDate = new Date(e.upload_date);
+            entry.createdAt = new Date(e.created_at);
+            return entry;
+          });
+          setPhotos(processedPhotos);
+        }
       }
 
-      // Process food entries with error handling
-      if (food.status === 'fulfilled') {
-        const processedFood = food.value.map((e: any) => {
-          const entry = toCamelCase(e);
-          entry.timestamp = new Date(e.timestamp);
-          entry.createdAt = new Date(e.created_at);
-          return entry;
-        });
-        setFoodEntries(processedFood);
-      }
-
-      // Process sleep entries with error handling
-      if (sleep.status === 'fulfilled') {
-        const processedSleep = sleep.value.map((e: any) => {
-          const entry = toCamelCase(e);
-          entry.startTime = new Date(e.start_time);
-          entry.endTime = new Date(e.end_time);
-          entry.createdAt = new Date(e.created_at);
-          return entry;
-        });
-        setSleepEntries(processedSleep);
-      }
-
-      // Process weight entries with error handling
-      if (weight.status === 'fulfilled') {
-        const processedWeight = weight.value.map((e: any) => {
-          const entry = toCamelCase(e);
-          const [year, month, day] = e.measurement_date.split('T')[0].split('-').map(Number);
-          entry.measurementDate = new Date(year, month - 1, day, 12, 0, 0);
-          entry.createdAt = new Date(e.created_at);
-          return entry;
-        });
-        setWeightEntries(processedWeight);
-      }
-
-      // Process photos with error handling
-      if (photoData.status === 'fulfilled') {
-        const processedPhotos = photoData.value.map((e: any) => {
-          const entry = toCamelCase(e);
-          entry.uploadDate = new Date(e.upload_date);
-          entry.createdAt = new Date(e.created_at);
-          return entry;
-        });
-        setPhotos(processedPhotos);
-      }
-
-      // Process treat entries with error handling
+      // Process treat entries with error handling (non-paginated response)
       if (treats.status === 'fulfilled') {
         const processedTreats = treats.value.map((e: any) => {
           const entry = toCamelCase(e);
