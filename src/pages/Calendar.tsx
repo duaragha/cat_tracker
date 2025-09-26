@@ -48,7 +48,6 @@ import {
   startOfWeek,
   endOfWeek,
   eachDayOfInterval,
-  isSameDay,
   isToday,
   addMonths,
   subMonths,
@@ -68,7 +67,7 @@ const CATEGORY_COLORS = {
   food: { bg: 'green.100', color: 'green.600', icon: FaUtensils },
   sleep: { bg: 'purple.100', color: 'purple.600', icon: FaBed },
   weight: { bg: 'blue.100', color: 'blue.600', icon: FaWeight },
-  treats: { bg: 'orange.100', color: 'orange.600', icon: FaTint },
+  treats: { bg: 'orange.100', color: 'orange.600', icon: FaUtensils },
   profile: { bg: 'yellow.100', color: 'yellow.600', icon: FaUser },
 };
 

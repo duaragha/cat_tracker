@@ -19,7 +19,6 @@ export const useTestData = () => {
         id: 'test-cat-1',
         name: 'Whiskers',
         breed: 'Tabby',
-        color: 'Orange',
         birthDate: new Date('2020-03-15'),
         gotchaDate: new Date('2020-06-01'),
         weight: 4.5,
@@ -46,10 +45,10 @@ export const useTestData = () => {
 
           await addWashroomEntry({
             timestamp,
-            type: Math.random() > 0.7 ? 'urine' : 'feces',
-            consistency: ['firm', 'soft', 'loose', 'liquid'][Math.floor(Math.random() * 4)],
+            type: Math.random() > 0.7 ? 'pee' : 'pooper',
+            consistency: ['firm', 'soft', 'half n half', 'diarrhea'][Math.floor(Math.random() * 4)] as 'firm' | 'soft' | 'half n half' | 'diarrhea',
             hasBlood: Math.random() > 0.9,
-            color: ['brown', 'dark brown', 'light brown', 'yellow'][Math.floor(Math.random() * 4)],
+            color: ['brown', 'dark brown', 'light brown', 'yellow'][Math.floor(Math.random() * 4)] as 'yellow' | 'green' | 'light brown' | 'brown' | 'dark brown' | 'black' | 'other',
             photos: [],
             notes: Math.random() > 0.7 ? 'Normal bowel movement' : ''
           });
@@ -87,8 +86,8 @@ export const useTestData = () => {
           await addSleepEntry({
             startTime,
             endTime,
-            quality: ['poor', 'fair', 'good', 'excellent'][Math.floor(Math.random() * 4)],
-            location: ['couch', 'bed', 'cat tree', 'windowsill', 'carpet'][Math.floor(Math.random() * 5)],
+            quality: ['restful', 'normal', 'restless'][Math.floor(Math.random() * 3)] as 'restful' | 'normal' | 'restless',
+            location: ['Couch', 'Bed', 'Cat Tree', 'Window', 'Floor'][Math.floor(Math.random() * 5)] as 'Cat Bed' | 'Bed' | 'Cat Tree' | 'Couch' | 'Floor' | 'Window' | 'Other',
             photos: [],
             notes: Math.random() > 0.8 ? 'Deep sleep' : ''
           });
@@ -107,7 +106,7 @@ export const useTestData = () => {
             brand: ['Friskies', 'Temptations', 'Blue Buffalo', 'Wellness'][Math.floor(Math.random() * 4)],
             quantity: Math.floor(Math.random() * 5) + 1,
             calories: Math.floor(Math.random() * 20) + 5,
-            purpose: ['training', 'reward', 'dental health', 'just because'][Math.floor(Math.random() * 4)],
+            purpose: ['training', 'reward', 'dental', 'just because'][Math.floor(Math.random() * 4)] as 'reward' | 'training' | 'medication' | 'dental' | 'just because',
             notes: Math.random() > 0.8 ? 'Really enjoyed these' : ''
           });
         }
@@ -122,7 +121,6 @@ export const useTestData = () => {
         await addWeightEntry({
           measurementDate: date,
           weight: 4.3 + (Math.random() * 0.4), // 4.3-4.7 kg
-          unit: 'kg',
           notes: i === 0 ? 'Regular check-up' : ''
         });
       }

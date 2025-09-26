@@ -5,6 +5,9 @@ export interface CatProfile {
   birthDate?: Date;
   gotchaDate?: Date; // adoption/rescue date
   weight?: number; // stored in kg, displayed as lb
+  microchipId?: string;
+  veterinarian?: string;
+  notes?: string;
   photoUrl?: string;
   createdAt: Date;
   updatedAt: Date;
@@ -167,10 +170,10 @@ export interface WeeklyStats {
 export interface CalendarEvent {
   id: string;
   date: Date;
-  category: 'washroom' | 'food' | 'sleep' | 'weight' | 'profile';
+  category: 'washroom' | 'food' | 'sleep' | 'weight' | 'profile' | 'treats';
   title: string;
   description?: string;
-  data: WashroomEntry | FoodEntry | SleepEntry | WeightEntry | ProfileEvent;
+  data: WashroomEntry | FoodEntry | SleepEntry | WeightEntry | ProfileEvent | TreatEntry;
   color: string;
 }
 

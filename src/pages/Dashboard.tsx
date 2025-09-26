@@ -29,7 +29,6 @@ import { FaUtensils, FaBed, FaWeight, FaCamera, FaToilet, FaDatabase, FaCog } fr
 import { PhotoThumbnailGrid } from '../components/PhotoThumbnailGrid';
 import { PhotoViewer } from '../components/PhotoViewer';
 import { useCatData } from '../contexts/CatDataContext';
-import { useTestData } from '../hooks/useTestData';
 import { useMockData } from '../hooks/useMockData';
 import { format, isToday } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
@@ -46,7 +45,6 @@ const Dashboard = () => {
 
   const navigate = useNavigate();
   const toast = useToast();
-  const { generateTestData } = useTestData();
   const { generateMockData, clearMockData } = useMockData();
   const bgColor = useColorModeValue('white', 'gray.800');
   const borderColor = useColorModeValue('gray.200', 'gray.700');

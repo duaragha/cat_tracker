@@ -3,7 +3,7 @@ import { useCatData } from '../contexts/CatDataContext';
 
 // Mock data that works without backend
 export const useMockData = () => {
-  const { catProfile } = useCatData();
+  const { } = useCatData(); // Remove unused catProfile variable
 
   const generateMockData = useCallback(async () => {
     try {
