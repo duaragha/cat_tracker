@@ -335,15 +335,33 @@ export const CatDataProvider: React.FC<{ children: ReactNode }> = ({ children })
     }
   }, [handleError]);
 
-  // Load profile on mount
+  // Defer initial data load to improve perceived performance
   useEffect(() => {
-    loadProfile();
+    // Use requestIdleCallback to defer non-critical data loading
+    const loadData = () => {
+      loadProfile();
+    };
+
+    if ('requestIdleCallback' in window) {
+      (window as any).requestIdleCallback(loadData, { timeout: 2000 });
+    } else {
+      // Fallback for browsers without requestIdleCallback
+      setTimeout(loadData, 100);
+    }
   }, [loadProfile]);
 
-  // Load all data when profile changes
+  // Load all data when profile changes (also deferred)
   useEffect(() => {
     if (catProfile?.id) {
-      loadAllData(catProfile.id);
+      const loadData = () => {
+        loadAllData(catProfile.id);
+      };
+
+      if ('requestIdleCallback' in window) {
+        (window as any).requestIdleCallback(loadData, { timeout: 2000 });
+      } else {
+        setTimeout(loadData, 100);
+      }
     }
   }, [catProfile?.id, loadAllData]);
 

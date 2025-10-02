@@ -18,10 +18,10 @@ import {
   DrawerCloseButton,
   VStack,
 } from '@chakra-ui/react';
-import { 
-  FaMoon, 
-  FaSun, 
-  FaBars, 
+import {
+  FaMoon,
+  FaSun,
+  FaBars,
   FaPaw,
   FaHome,
   FaCalendarAlt,
